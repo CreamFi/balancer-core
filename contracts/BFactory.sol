@@ -40,6 +40,7 @@ contract BFactory is BBronze {
         external
         returns (BPool)
     {
+        require(msg.sender == _blabs, "ERR_NOT_BLABS");
         BPool bpool = new BPool();
         _isBPool[address(bpool)] = true;
         emit LOG_NEW_POOL(msg.sender, address(bpool));
