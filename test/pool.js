@@ -560,10 +560,10 @@ contract('BPool', async (accounts) => {
     describe('BToken interactions', () => {
         it('Token descriptors', async () => {
             const name = await pool.name();
-            assert.equal(name, 'Balancer Pool Token');
+            assert.equal(name, 'Cream Pool Token');
 
             const symbol = await pool.symbol();
-            assert.equal(symbol, 'BPT');
+            assert.equal(symbol, 'CRPT');
 
             const decimals = await pool.decimals();
             assert.equal(decimals, 18);
