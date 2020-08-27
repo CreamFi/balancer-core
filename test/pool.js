@@ -395,6 +395,7 @@ contract('BPool', async (accounts) => {
         it('swapExactAmountIn', async () => {
             // 2.5 WETH -> DAI
             const expected = calcOutGivenIn(52.5, 5, 10500, 5, 2.5, 0.003);
+            const expectedZeroFee = calcOutGivenIn(52.5, 5, 10500, 5, 2.5, 0);
             const txr = await pool.swapExactAmountIn(
                 WETH,
                 toWei('2.5'),
@@ -417,6 +418,12 @@ contract('BPool', async (accounts) => {
             }
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
+
+            const feeDai = await pool.accumulatedSwapFee.call(DAI);
+            const feeWETH = await pool.accumulatedSwapFee.call(WETH);
+            const expectedFeeDai = expectedZeroFee - expected;
+            assert.approximately(Number(fromWei(feeDai)), expectedFeeDai, errorDelta);
+            assert.equal(fromWei(feeWETH), 0);
 
             const userDaiBalance = await dai.balanceOf(user2);
             assert.equal(fromWei(userDaiBalance), Number(fromWei(log.args[4])));

@@ -81,6 +81,8 @@ contract BPool is BBronze, BToken, BMath {
 
     address[] private _tokens;
     mapping(address=>Record) private  _records;
+    mapping(address=>uint) public accumulatedSwapFee;
+
     uint private _totalWeight;
 
     constructor() public {
@@ -461,6 +463,17 @@ contract BPool is BBronze, BToken, BMath {
                         );
         require(tokenAmountOut >= minAmountOut, "ERR_LIMIT_OUT");
 
+        uint tokenAmountOutZeroFee = calcOutGivenIn(
+                            inRecord.balance,
+                            inRecord.denorm,
+                            outRecord.balance,
+                            outRecord.denorm,
+                            tokenAmountIn,
+                            0
+                        );
+        require(tokenAmountOutZeroFee >= tokenAmountOut, "ERR_WRONG_FEE");
+        uint swapFee = tokenAmountOutZeroFee - tokenAmountOut;
+
         inRecord.balance = badd(inRecord.balance, tokenAmountIn);
         outRecord.balance = bsub(outRecord.balance, tokenAmountOut);
 
@@ -476,6 +489,8 @@ contract BPool is BBronze, BToken, BMath {
         require(spotPriceBefore <= bdiv(tokenAmountIn, tokenAmountOut), "ERR_MATH_APPROX");
 
         emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
+
+        accumulatedSwapFee[address(tokenOut)] = badd(accumulatedSwapFee[address(tokenOut)], swapFee);
 
         _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
         _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);
