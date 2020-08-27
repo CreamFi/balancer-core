@@ -81,7 +81,7 @@ contract BPool is BBronze, BToken, BMath {
 
     address[] private _tokens;
     mapping(address=>Record) private  _records;
-    mapping(address=>uint) public accumulatedSwapFee;
+    mapping(address=>uint) public reserves;
 
     uint private _totalWeight;
 
@@ -472,7 +472,8 @@ contract BPool is BBronze, BToken, BMath {
                             0
                         );
         require(tokenAmountOutZeroFee >= tokenAmountOut, "ERR_WRONG_FEE");
-        uint swapFee = tokenAmountOutZeroFee - tokenAmountOut;
+        // reserves = tokenSwapFee / 2
+        uint tokenReserves = bmul(bsub(tokenAmountOutZeroFee, tokenAmountOut), RESERVES_RATIO);
 
         inRecord.balance = badd(inRecord.balance, tokenAmountIn);
         outRecord.balance = bsub(outRecord.balance, tokenAmountOut);
@@ -490,7 +491,7 @@ contract BPool is BBronze, BToken, BMath {
 
         emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
 
-        accumulatedSwapFee[address(tokenOut)] = badd(accumulatedSwapFee[address(tokenOut)], swapFee);
+        reserves[address(tokenOut)] = badd(reserves[address(tokenOut)], tokenReserves);
 
         _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
         _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);

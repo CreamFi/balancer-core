@@ -419,11 +419,11 @@ contract('BPool', async (accounts) => {
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
 
-            const feeDai = await pool.accumulatedSwapFee.call(DAI);
-            const feeWETH = await pool.accumulatedSwapFee.call(WETH);
-            const expectedFeeDai = expectedZeroFee - expected;
-            assert.approximately(Number(fromWei(feeDai)), expectedFeeDai, errorDelta);
-            assert.equal(fromWei(feeWETH), 0);
+            const reservesDai = await pool.reserves.call(DAI);
+            const reservesWETH = await pool.reserves.call(WETH);
+            const expectedReservesDai = (expectedZeroFee - expected) / 2;
+            assert.approximately(Number(fromWei(reservesDai)), expectedReservesDai, errorDelta);
+            assert.equal(fromWei(reservesWETH), 0);
 
             const userDaiBalance = await dai.balanceOf(user2);
             assert.equal(fromWei(userDaiBalance), Number(fromWei(log.args[4])));
