@@ -542,7 +542,22 @@ contract BPool is BBronze, BToken, BMath {
                         );
         require(tokenAmountIn <= maxAmountIn, "ERR_LIMIT_IN");
 
-        inRecord.balance = badd(inRecord.balance, tokenAmountIn);
+        uint tokenAmountInZeroFee = calcInGivenOut(
+                            inRecord.balance,
+                            inRecord.denorm,
+                            outRecord.balance,
+                            outRecord.denorm,
+                            tokenAmountOut,
+                            0
+                        );
+        require(tokenAmountInZeroFee <= tokenAmountIn, "ERR_WRONG_FEE");
+        uint reserves = _calSwapFeeAndReserves(
+            tokenAmountIn,
+            tokenAmountInZeroFee
+        );
+
+        // Subtract `reserves` which is reserved for admin.
+        inRecord.balance = bsub(badd(inRecord.balance, tokenAmountIn), reserves);
         outRecord.balance = bsub(outRecord.balance, tokenAmountOut);
 
         spotPriceAfter = calcSpotPrice(
@@ -557,6 +572,8 @@ contract BPool is BBronze, BToken, BMath {
         require(spotPriceBefore <= bdiv(tokenAmountIn, tokenAmountOut), "ERR_MATH_APPROX");
 
         emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
+
+        totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
 
         _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
         _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);

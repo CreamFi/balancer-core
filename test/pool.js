@@ -451,6 +451,7 @@ contract('BPool', async (accounts) => {
             // ETH -> 1 MKR
             // const amountIn = (55 * (((21 / (21 - 1)) ** (5 / 5)) - 1)) / (1 - 0.003);
             const expected = calcInGivenOut(55, 5, 21, 5, 1, 0.003);
+            const expectedZeroFee = calcInGivenOut(55, 5, 21, 5, 1, 0);
             const txr = await pool.swapExactAmountOut(
                 WETH,
                 toWei('3'),
@@ -462,6 +463,13 @@ contract('BPool', async (accounts) => {
             const log = txr.logs[0];
             assert.equal(log.event, 'LOG_SWAP');
             // 2.758274824473420261
+
+            // Test: `totalReserves` is updated correctly.
+            const reservesWETH = await pool.totalReserves.call(WETH);
+            const reservesMKR = await pool.totalReserves.call(MKR);
+            const expectedReservesWETH = (expected - expectedZeroFee) / 2;
+            assert.approximately(Number(fromWei(reservesWETH)), expectedReservesWETH, errorDelta);
+            assert.equal(fromWei(reservesMKR), 0);
 
             const actual = fromWei(log.args[3]);
             const relDif = calcRelativeDiff(expected, actual);
