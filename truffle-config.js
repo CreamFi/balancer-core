@@ -23,7 +23,10 @@ module.exports = {
                     enabled: true,
                     runs: 100,
                 },
-                evmVersion: 'byzantium',
+                // FIXME:
+                //  Commented it out to avoid "out of gas" when deploying the contract for now.
+                //  Find out what it should be exactly.
+                // evmVersion: 'byzantium',
             },
         },
     },
