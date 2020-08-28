@@ -1,6 +1,6 @@
 const Decimal = require('decimal.js');
 const truffleAssert = require('truffle-assertions');
-const { calcRelativeDiff } = require('../lib/calc_comparisons');
+const { calcSpotPrice, calcRelativeDiff } = require('../lib/calc_comparisons');
 
 const BPool = artifacts.require('BPool');
 const BFactory = artifacts.require('BFactory');
@@ -136,8 +136,7 @@ contract('BPool', async (accounts) => {
             }
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
-
-            expected = Decimal('74.1844011380065814');
+            expected = Decimal('74.1846535049645437');
             actual = Decimal(fromWei(output.spotPriceAfter));
             relDif = calcRelativeDiff(expected, actual);
 
@@ -177,7 +176,7 @@ contract('BPool', async (accounts) => {
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
 
-            expected = Decimal('31306034272.9265099');
+            expected = Decimal('31290381255.8268333');
             actual = Decimal(fromWei(output.spotPriceAfter));
             relDif = calcRelativeDiff(expected, actual);
 
