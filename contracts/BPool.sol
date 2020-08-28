@@ -81,7 +81,7 @@ contract BPool is BBronze, BToken, BMath {
 
     address[] private _tokens;
     mapping(address=>Record) private  _records;
-    mapping(address=>uint) public reserves;
+    mapping(address=>uint) public totalReserves;
 
     uint private _totalWeight;
 
@@ -472,11 +472,14 @@ contract BPool is BBronze, BToken, BMath {
                             0
                         );
         require(tokenAmountOutZeroFee >= tokenAmountOut, "ERR_WRONG_FEE");
-        // reserves = tokenSwapFee / 2
-        uint tokenReserves = bmul(bsub(tokenAmountOutZeroFee, tokenAmountOut), RESERVES_RATIO);
+        uint reserves = _calSwapFeeAndReserves(
+            tokenAmountOutZeroFee,
+            tokenAmountOut
+        );
 
         inRecord.balance = badd(inRecord.balance, tokenAmountIn);
-        outRecord.balance = bsub(outRecord.balance, tokenAmountOut);
+        // Subtract `reserves` which is reserved for admin.
+        outRecord.balance = bsub(bsub(outRecord.balance, tokenAmountOut), reserves);
 
         spotPriceAfter = calcSpotPrice(
                                 inRecord.balance,
@@ -491,7 +494,7 @@ contract BPool is BBronze, BToken, BMath {
 
         emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
 
-        reserves[address(tokenOut)] = badd(reserves[address(tokenOut)], tokenReserves);
+        totalReserves[address(tokenOut)] = badd(totalReserves[address(tokenOut)], reserves);
 
         _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
         _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);
@@ -750,6 +753,20 @@ contract BPool is BBronze, BToken, BMath {
         internal
     {
         _burn(amount);
+    }
+
+    // `swapFeeAndReserves = amountWithFee - amountWithoutFee` is the swap fee in balancer.
+    // We divide `swapFeeAndReserves` into halves, `actualSwapFee` and `reserves`.
+    // `reserves` goes to the admin and `actualSwapFee` still goes to the liquidity
+    // providers.
+    function _calSwapFeeAndReserves(uint amountWithFee, uint amountWithoutFee)
+        internal pure
+        returns (uint reserves)
+    {
+        require(amountWithFee >= amountWithoutFee, "ERR_WRONG_FEE");
+        uint swapFeeAndReserves = bsub(amountWithFee, amountWithoutFee);
+        reserves = bmul(swapFeeAndReserves, RESERVES_RATIO);
+        require(swapFeeAndReserves >= reserves, "ERR_WRONG_RESERVES");
     }
 
 }

@@ -1,5 +1,5 @@
 const truffleAssert = require('truffle-assertions');
-const { calcOutGivenIn, calcInGivenOut, calcRelativeDiff } = require('../lib/calc_comparisons');
+const { calcSpotPrice, calcOutGivenIn, calcInGivenOut, calcRelativeDiff } = require('../lib/calc_comparisons');
 
 const BPool = artifacts.require('BPool');
 const BFactory = artifacts.require('BFactory');
@@ -419,8 +419,9 @@ contract('BPool', async (accounts) => {
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
 
-            const reservesDai = await pool.reserves.call(DAI);
-            const reservesWETH = await pool.reserves.call(WETH);
+            // Test: `totalReserves` is updated correctly.
+            const reservesDai = await pool.totalReserves.call(DAI);
+            const reservesWETH = await pool.totalReserves.call(WETH);
             const expectedReservesDai = (expectedZeroFee - expected) / 2;
             assert.approximately(Number(fromWei(reservesDai)), expectedReservesDai, errorDelta);
             assert.equal(fromWei(reservesWETH), 0);
@@ -428,9 +429,18 @@ contract('BPool', async (accounts) => {
             const userDaiBalance = await dai.balanceOf(user2);
             assert.equal(fromWei(userDaiBalance), Number(fromWei(log.args[4])));
 
-            // 182.804672101083406128
+            // Test: `spotPrice` calculated inside the contract is approximate to the
+            //  one calculated outside.
             const wethPrice = await pool.getSpotPrice(DAI, WETH);
-            const wethPriceFeeCheck = ((10024.094194662908577 / 5) / (55 / 5)) * (1 / (1 - 0.003));
+            const curDAIBalance = await pool.getBalance.call(DAI);
+            const curWETHBalance = await pool.getBalance.call(WETH);
+            const wethPriceFeeCheck = calcSpotPrice(
+                fromWei(curDAIBalance),
+                5,
+                fromWei(curWETHBalance),
+                5,
+                0.003
+            );
             assert.approximately(Number(fromWei(wethPrice)), Number(wethPriceFeeCheck), errorDelta);
 
             const daiNormWeight = await pool.getNormalizedWeight(DAI);
