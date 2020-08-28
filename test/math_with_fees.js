@@ -130,7 +130,7 @@ contract('BPool', async (accounts) => {
             );
 
             // Checking outputs
-            let expected = calcOutGivenIn(
+            const amountOut = calcOutGivenIn(
                 currentWethBalance,
                 wethNorm,
                 currentDaiBalance,
@@ -138,9 +138,19 @@ contract('BPool', async (accounts) => {
                 tokenAmountIn,
                 swapFee,
             );
+            const amountOutZeroFee = calcOutGivenIn(
+                currentWethBalance,
+                wethNorm,
+                currentDaiBalance,
+                daiNorm,
+                tokenAmountIn,
+                0,
+            );
+            const reserves = (amountOutZeroFee - amountOut) / 2;
 
+            let expected = amountOut;
             let actual = Decimal(fromWei(output[0]));
-            let relDif = calcRelativeDiff(expected, actual);
+            let relDif = calcRelativeDiff(amountOut, actual);
 
             if (verbose) {
                 console.log('output[0]');
@@ -154,12 +164,10 @@ contract('BPool', async (accounts) => {
             expected = calcSpotPrice(
                 currentWethBalance.plus(Decimal(2)),
                 wethNorm,
-                currentDaiBalance.sub(actual),
+                currentDaiBalance.sub(actual).sub(Decimal(reserves)),  // Subtract the reserves
                 daiNorm,
                 swapFee,
             );
-            // expected = 1 / ((1 - swapFee) * (4 + 2)) / (48 / (4 + 2 * (1 - swapFee)));
-            // expected = ((1 / (1 - swapFee)) * (4 + 2)) / (48 / (4 + 2 * (1 - swapFee)));
             actual = fromWei(output[1]);
             relDif = calcRelativeDiff(expected, actual);
 
@@ -190,8 +198,7 @@ contract('BPool', async (accounts) => {
             );
 
             // Checking outputs
-            // let expected = (48 / (4 - 1) - 12) / (1 - swapFee);
-            let expected = calcInGivenOut(
+            const amountIn = calcInGivenOut(
                 currentDaiBalance,
                 daiNorm,
                 currentWethBalance,
@@ -199,7 +206,17 @@ contract('BPool', async (accounts) => {
                 tokenAmountOut,
                 swapFee,
             );
+            const amountInZeroFee = calcInGivenOut(
+                currentDaiBalance,
+                daiNorm,
+                currentWethBalance,
+                wethNorm,
+                tokenAmountOut,
+                0,
+            );
+            const reserves = (amountIn - amountInZeroFee) / 2;
 
+            let expected = amountIn;
             let actual = fromWei(output[0]);
             let relDif = calcRelativeDiff(expected, actual);
 
@@ -213,7 +230,7 @@ contract('BPool', async (accounts) => {
             assert.isAtMost(relDif.toNumber(), errorDelta);
 
             expected = calcSpotPrice(
-                currentDaiBalance.plus(actual),
+                currentDaiBalance.plus(actual).sub(Decimal(reserves)),
                 daiNorm,
                 currentWethBalance.sub(Decimal(1)),
                 wethNorm,
