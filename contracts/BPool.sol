@@ -779,10 +779,13 @@ contract BPool is BBronze, BToken, BMath {
         _pullPoolShare(msg.sender, poolAmountIn);
         // poolAmountIn - exitFeeAndReserves >= 0
         //  poolAmountIn - (exitFee + reserves)
-        // = poolAmountIn - ((poolAmountIn * EXIT_FEE) + (poolAmountIn - poolAmountInZeroFee) * RESERVES_RATIO)
-        // = (poolAmountIn * (1 - RESERVES_RATIO)) + (poolAmountInZeroFee * RESERVES_RATIO) - (poolAmountIn * EXIT_FEE)
-        // >= (poolAmountIn * (1 - RESERVES_RATIO)) + (poolAmountIn * RESERVES_RATIO) - (poolAmountIn * EXIT_FEE)
-        // = poolAmountIn * (1 - EXIT_FEE) >= 0  because 0 <= EXIT_FEE <= 1
+        // = poolAmountIn - ((poolAmountIn * EXIT_FEE) +
+        //   (poolAmountIn - poolAmountInZeroFee) * RESERVES_RATIO)
+        // = (poolAmountIn * (1 - RESERVES_RATIO)) + (poolAmountInZeroFee * RESERVES_RATIO) -
+        //   (poolAmountIn * EXIT_FEE)
+        // >= (poolAmountIn * (1 - RESERVES_RATIO)) + (poolAmountIn * RESERVES_RATIO) -
+        //   (poolAmountIn * EXIT_FEE)
+        // = poolAmountIn * (1 - EXIT_FEE) >= 0,  because 0 <= EXIT_FEE <= 1
         _burnPoolShare(bsub(poolAmountIn, exitFeeAndReserves));
         _pushPoolShare(_factory, exitFeeAndReserves);
         _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);        
