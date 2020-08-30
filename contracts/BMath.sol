@@ -267,5 +267,18 @@ contract BMath is BBronze, BConst, BNum {
         return poolAmountIn;
     }
 
+    // `swapFeeAndReserves = amountWithFee - amountWithoutFee` is the swap fee in balancer.
+    // We divide `swapFeeAndReserves` into halves, `actualSwapFee` and `reserves`.
+    // `reserves` goes to the admin and `actualSwapFee` still goes to the liquidity
+    // providers.
+    function calcSwapFeeAndReserves(uint amountWithFee, uint amountWithoutFee)
+        internal pure
+        returns (uint reserves)
+    {
+        require(amountWithFee >= amountWithoutFee, "ERR_WRONG_FEE");
+        uint swapFeeAndReserves = bsub(amountWithFee, amountWithoutFee);
+        reserves = bmul(swapFeeAndReserves, RESERVES_RATIO);
+        require(swapFeeAndReserves >= reserves, "ERR_WRONG_RESERVES");
+    }
 
 }

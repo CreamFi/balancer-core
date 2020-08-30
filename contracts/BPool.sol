@@ -471,7 +471,7 @@ contract BPool is BBronze, BToken, BMath {
                             tokenAmountIn,
                             0
                         );
-        uint reserves = _calSwapFeeAndReserves(
+        uint reserves = calcSwapFeeAndReserves(
             tokenAmountOutZeroFee,
             tokenAmountOut
         );
@@ -549,7 +549,7 @@ contract BPool is BBronze, BToken, BMath {
                             tokenAmountOut,
                             0
                         );
-        uint reserves = _calSwapFeeAndReserves(
+        uint reserves = calcSwapFeeAndReserves(
             tokenAmountIn,
             tokenAmountInZeroFee
         );
@@ -612,7 +612,7 @@ contract BPool is BBronze, BToken, BMath {
             tokenAmountIn,
             0
         );
-        uint reserves = _calSwapFeeAndReserves(
+        uint reserves = calcSwapFeeAndReserves(
             poolAmountOutZeroFee,
             poolAmountOut
         );
@@ -661,7 +661,7 @@ contract BPool is BBronze, BToken, BMath {
             poolAmountOut,
             0
         );
-        uint reserves = _calSwapFeeAndReserves(
+        uint reserves = calcSwapFeeAndReserves(
             tokenAmountIn,
             tokenAmountInZeroFee
         );
@@ -711,7 +711,7 @@ contract BPool is BBronze, BToken, BMath {
             poolAmountIn,
             0
         );
-        uint reserves = _calSwapFeeAndReserves(
+        uint reserves = calcSwapFeeAndReserves(
             tokenAmountOutZeroFee,
             tokenAmountOut
         );
@@ -764,7 +764,7 @@ contract BPool is BBronze, BToken, BMath {
             tokenAmountOut,
             0
         );
-        uint reserves = _calSwapFeeAndReserves(
+        uint reserves = calcSwapFeeAndReserves(
             poolAmountIn,
             poolAmountInZeroFee
         );
@@ -831,20 +831,6 @@ contract BPool is BBronze, BToken, BMath {
         internal
     {
         _burn(amount);
-    }
-
-    // `swapFeeAndReserves = amountWithFee - amountWithoutFee` is the swap fee in balancer.
-    // We divide `swapFeeAndReserves` into halves, `actualSwapFee` and `reserves`.
-    // `reserves` goes to the admin and `actualSwapFee` still goes to the liquidity
-    // providers.
-    function _calSwapFeeAndReserves(uint amountWithFee, uint amountWithoutFee)
-        internal pure
-        returns (uint reserves)
-    {
-        require(amountWithFee >= amountWithoutFee, "ERR_WRONG_FEE");
-        uint swapFeeAndReserves = bsub(amountWithFee, amountWithoutFee);
-        reserves = bmul(swapFeeAndReserves, RESERVES_RATIO);
-        require(swapFeeAndReserves >= reserves, "ERR_WRONG_RESERVES");
     }
 
 }
