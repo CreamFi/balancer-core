@@ -471,7 +471,7 @@ contract BPool is BBronze, BToken, BMath {
                             tokenAmountIn,
                             0
                         );
-        uint reserves = calcSwapFeeAndReserves(
+        uint reserves = calcReserves(
             tokenAmountOutZeroFee,
             tokenAmountOut
         );
@@ -549,7 +549,7 @@ contract BPool is BBronze, BToken, BMath {
                             tokenAmountOut,
                             0
                         );
-        uint reserves = calcSwapFeeAndReserves(
+        uint reserves = calcReserves(
             tokenAmountIn,
             tokenAmountInZeroFee
         );
@@ -612,7 +612,7 @@ contract BPool is BBronze, BToken, BMath {
             tokenAmountIn,
             0
         );
-        uint reserves = calcSwapFeeAndReserves(
+        uint reserves = calcReserves(
             poolAmountOutZeroFee,
             poolAmountOut
         );
@@ -661,7 +661,7 @@ contract BPool is BBronze, BToken, BMath {
             poolAmountOut,
             0
         );
-        uint reserves = calcSwapFeeAndReserves(
+        uint reserves = calcReserves(
             tokenAmountIn,
             tokenAmountInZeroFee
         );
@@ -711,7 +711,7 @@ contract BPool is BBronze, BToken, BMath {
             poolAmountIn,
             0
         );
-        uint reserves = calcSwapFeeAndReserves(
+        uint reserves = calcReserves(
             tokenAmountOutZeroFee,
             tokenAmountOut
         );
@@ -764,7 +764,7 @@ contract BPool is BBronze, BToken, BMath {
             tokenAmountOut,
             0
         );
-        uint reserves = calcSwapFeeAndReserves(
+        uint reserves = calcReserves(
             poolAmountIn,
             poolAmountInZeroFee
         );

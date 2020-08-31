@@ -271,7 +271,7 @@ contract BMath is BBronze, BConst, BNum {
     // We divide `swapFeeAndReserves` into halves, `actualSwapFee` and `reserves`.
     // `reserves` goes to the admin and `actualSwapFee` still goes to the liquidity
     // providers.
-    function calcSwapFeeAndReserves(uint amountWithFee, uint amountWithoutFee)
+    function calcReserves(uint amountWithFee, uint amountWithoutFee)
         internal pure
         returns (uint reserves)
     {
