@@ -1,6 +1,8 @@
 const Decimal = require('decimal.js');
 const truffleAssert = require('truffle-assertions');
-const { calcRelativeDiff, calcPoolOutGivenSingleIn, calcSingleInGivenPoolOut, calcReserves, calcPoolInGivenSingleOut } = require('../lib/calc_comparisons');
+const {
+    calcRelativeDiff, calcPoolOutGivenSingleIn, calcSingleInGivenPoolOut, calcReserves, calcPoolInGivenSingleOut,
+} = require('../lib/calc_comparisons');
 
 const BPool = artifacts.require('BPool');
 const BFactory = artifacts.require('BFactory');
@@ -244,8 +246,22 @@ contract('BPool', async (accounts) => {
             // increase tbalance by 1.1 after swap fee
             const tokenAmountIn = (1 / (1 - swapFee * (1 - wethNorm))) * (currentWethBalance * (tokenRatio - 1));
             await pool.joinswapExternAmountIn(WETH, toWei(String(tokenAmountIn)), toWei('0'));
-            const poolTokenOut = calcPoolOutGivenSingleIn(currentWethBalance, wethDenorm, currentPoolBalance, sumWeights, tokenAmountIn, swapFee);
-            const poolTokenOutZeroFee = calcPoolOutGivenSingleIn(currentWethBalance, wethDenorm, currentPoolBalance, sumWeights, tokenAmountIn, 0);
+            const poolTokenOut = calcPoolOutGivenSingleIn(
+                currentWethBalance,
+                wethDenorm,
+                currentPoolBalance,
+                sumWeights,
+                tokenAmountIn,
+                swapFee,
+            );
+            const poolTokenOutZeroFee = calcPoolOutGivenSingleIn(
+                currentWethBalance,
+                wethDenorm,
+                currentPoolBalance,
+                sumWeights,
+                tokenAmountIn,
+                0,
+            );
             const reserves = calcReserves(poolTokenOutZeroFee, poolTokenOut);
             // Update balance states
             previousWethBalance = currentWethBalance;
@@ -269,8 +285,22 @@ contract('BPool', async (accounts) => {
             previousPoolBalance = currentPoolBalance;
             currentPoolBalance = currentPoolBalance.mul(Decimal(poolRatio)); // increase by 1.1
             previousDaiBalance = currentDaiBalance;
-            const tokenAmountIn = calcSingleInGivenPoolOut(previousDaiBalance, daiDenorm, previousPoolBalance, sumWeights, poolAmountOut, swapFee);
-            const tokenAmountInZeroFee = calcSingleInGivenPoolOut(previousDaiBalance, daiDenorm, previousPoolBalance, sumWeights, poolAmountOut, 0);
+            const tokenAmountIn = calcSingleInGivenPoolOut(
+                previousDaiBalance,
+                daiDenorm,
+                previousPoolBalance,
+                sumWeights,
+                poolAmountOut,
+                swapFee,
+            );
+            const tokenAmountInZeroFee = calcSingleInGivenPoolOut(
+                previousDaiBalance,
+                daiDenorm,
+                previousPoolBalance,
+                sumWeights,
+                poolAmountOut,
+                0,
+            );
             const reserves = calcReserves(tokenAmountIn, tokenAmountInZeroFee);
             currentDaiBalance = currentDaiBalance.plus(tokenAmountIn).sub(reserves);
 
@@ -329,8 +359,24 @@ contract('BPool', async (accounts) => {
             previousDaiBalance = currentDaiBalance;
             currentDaiBalance = currentDaiBalance.sub(Decimal(tokenAmountOut));
             previousPoolBalance = currentPoolBalance;
-            const poolAmountIn = calcPoolInGivenSingleOut(previousDaiBalance, daiDenorm, previousPoolBalance, sumWeights, tokenAmountOut, swapFee, exitFee);
-            const poolAmountInZeroFee = calcPoolInGivenSingleOut(previousDaiBalance, daiDenorm, previousPoolBalance, sumWeights, tokenAmountOut, 0, exitFee);
+            const poolAmountIn = calcPoolInGivenSingleOut(
+                previousDaiBalance,
+                daiDenorm,
+                previousPoolBalance,
+                sumWeights,
+                tokenAmountOut,
+                swapFee,
+                exitFee,
+            );
+            const poolAmountInZeroFee = calcPoolInGivenSingleOut(
+                previousDaiBalance,
+                daiDenorm,
+                previousPoolBalance,
+                sumWeights,
+                tokenAmountOut,
+                0,
+                exitFee,
+            );
             const reserves = calcReserves(poolAmountIn, poolAmountInZeroFee);
             currentPoolBalance = previousPoolBalance.sub(poolAmountIn.sub(reserves.add(exitFee)));
 

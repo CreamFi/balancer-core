@@ -169,7 +169,7 @@ contract('BPool', async (accounts) => {
             expected = calcSpotPrice(
                 currentWethBalance.plus(Decimal(2)),
                 wethNorm,
-                currentDaiBalance.sub(actual).sub(Decimal(reserves)),  // Subtract the reserves
+                currentDaiBalance.sub(actual).sub(Decimal(reserves)), // Subtract the reserves
                 daiNorm,
                 swapFee,
             );
@@ -310,8 +310,8 @@ contract('BPool', async (accounts) => {
 
             const pAo = Decimal(
                 fromWei(
-                    await pool.joinswapExternAmountIn.call(WETH, toWei(String(tAi)), toWei('0'))
-                )
+                    await pool.joinswapExternAmountIn.call(WETH, toWei(String(tAi)), toWei('0')),
+                ),
             );
             // Execute txn called above
             const pAoZeroFee = calcPoolOutGivenSingleIn(
@@ -320,7 +320,7 @@ contract('BPool', async (accounts) => {
                 currentPoolBalance,
                 sumWeights,
                 tAi,
-                0
+                0,
             );
             const reserves = calcReserves(pAoZeroFee, pAo);
             await pool.joinswapExternAmountIn(WETH, toWei(String(tAi)), toWei('0'));
@@ -354,8 +354,17 @@ contract('BPool', async (accounts) => {
             // Call function
             const poolRatio = 1.1;
             const pAo = currentPoolBalance * (poolRatio - 1);
-            const tAi = Decimal(fromWei(await pool.joinswapPoolAmountOut.call(DAI, toWei(String(pAo)), MAX))); // 10% of current supply
-            const tAiZeroFee = calcSingleInGivenPoolOut(currentDaiBalance, daiDenorm, currentPoolBalance, sumWeights, pAo, 0);
+            const tAi = Decimal(fromWei(
+                await pool.joinswapPoolAmountOut.call(DAI, toWei(String(pAo)), MAX),
+            )); // 10% of current supply
+            const tAiZeroFee = calcSingleInGivenPoolOut(
+                currentDaiBalance,
+                daiDenorm,
+                currentPoolBalance,
+                sumWeights,
+                pAo,
+                0,
+            );
             await pool.joinswapPoolAmountOut(DAI, toWei(String(pAo)), MAX);
 
             const reserves = calcReserves(tAi, tAiZeroFee);
@@ -391,8 +400,18 @@ contract('BPool', async (accounts) => {
             const poolRatioAfterExitFee = 0.9;
             const pAi = currentPoolBalance * (1 - poolRatioAfterExitFee) * (1 / (1 - exitFee));
 
-            const tAo = Decimal(fromWei(await pool.exitswapPoolAmountIn.call(WETH, toWei(String(pAi)), toWei('0'))));
-            const tAoZeroFee = calcSingleOutGivenPoolIn(currentWethBalance, wethDenorm, currentPoolBalance, sumWeights, pAi, 0, exitFee);
+            const tAo = Decimal(fromWei(
+                await pool.exitswapPoolAmountIn.call(WETH, toWei(String(pAi)), toWei('0')),
+            ));
+            const tAoZeroFee = calcSingleOutGivenPoolIn(
+                currentWethBalance,
+                wethDenorm,
+                currentPoolBalance,
+                sumWeights,
+                pAi,
+                0,
+                exitFee,
+            );
             const reserves = calcReserves(tAoZeroFee, tAo);
             await pool.exitswapPoolAmountIn(WETH, toWei(String(pAi)), toWei('0'));
 
@@ -436,8 +455,8 @@ contract('BPool', async (accounts) => {
 
             // Calculate the reserves in pool token.
             const pAiZeroFee = calcPoolInGivenSingleOut(
-                currentDaiBalance, daiDenorm, currentPoolBalance, sumWeights, tAo, 0, exitFee
-            )
+                currentDaiBalance, daiDenorm, currentPoolBalance, sumWeights, tAo, 0, exitFee,
+            );
             const reserves = calcReserves(pAi, pAiZeroFee);
 
             // Update balance states
@@ -452,14 +471,18 @@ contract('BPool', async (accounts) => {
             //    curbalance = preBalance - (pAi - (exitFee + reserves))
             // -> pAi = preBalance - curBalance + (exitFee + reserves)
             // Notice the (1-exitFee) term since only pAi*(1-exitFee) is burned
-            const expectedPAiWithExitFee = (previousPoolBalance.sub(currentPoolBalance)).div(Decimal(1).sub(Decimal(exitFee)));
+            const expectedPAiWithExitFee = previousPoolBalance.sub(currentPoolBalance).div(
+                Decimal(1).sub(Decimal(exitFee)),
+            );
             const expectedPAiWithExitFeeAndReserves = expectedPAiWithExitFee.plus(reserves);
             const actual = pAi;
             const relDif = calcRelativeDiff(expectedPAiWithExitFeeAndReserves, actual);
 
             if (verbose) {
                 console.log('pAi');
-                console.log(`expected: ${expected})`);
+                console.log(
+                    `expectedPAiWithExitFeeAndReserves: ${expectedPAiWithExitFeeAndReserves})`,
+                );
                 console.log(`actual  : ${actual})`);
                 console.log(`relDif  : ${relDif})`);
             }

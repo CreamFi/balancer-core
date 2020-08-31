@@ -1,5 +1,7 @@
 const truffleAssert = require('truffle-assertions');
-const { calcSpotPrice, calcOutGivenIn, calcInGivenOut, calcRelativeDiff } = require('../lib/calc_comparisons');
+const {
+    calcSpotPrice, calcOutGivenIn, calcInGivenOut, calcRelativeDiff,
+} = require('../lib/calc_comparisons');
 
 const BPool = artifacts.require('BPool');
 const BFactory = artifacts.require('BFactory');
@@ -439,7 +441,7 @@ contract('BPool', async (accounts) => {
                 5,
                 fromWei(curWETHBalance),
                 5,
-                0.003
+                0.003,
             );
             assert.approximately(Number(fromWei(wethPrice)), Number(wethPriceFeeCheck), errorDelta);
 
