@@ -45,6 +45,12 @@ contract BPool is BBronze, BToken, BMath {
         uint256         tokenAmountOut
     );
 
+    event LOG_DRAIN_RESERVES(
+        address indexed caller,
+        address indexed tokenOut,
+        uint256         tokenAmountOut
+    );
+
     event LOG_CALL(
         bytes4  indexed sig,
         address indexed caller,
@@ -763,6 +769,21 @@ contract BPool is BBronze, BToken, BMath {
         return poolAmountIn;
     }
 
+    function drainTotalReserves(address reservesAddress)
+        external
+        _logs_
+        _lock_
+    {
+        require(msg.sender == _factory);
+
+        for (uint i = 0; i < _tokens.length; i++) {
+            address t = _tokens[i];
+            uint tokenAmountOut = totalReserves[t];
+            totalReserves[t] = 0;
+            emit LOG_DRAIN_RESERVES(reservesAddress, t, tokenAmountOut);
+            _pushUnderlying(t, reservesAddress, tokenAmountOut);
+        }
+    }
 
     // ==
     // 'Underlying' token-manipulation functions make external calls but are NOT locked
