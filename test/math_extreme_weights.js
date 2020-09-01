@@ -296,7 +296,7 @@ contract('BPool', async (accounts) => {
             const tokenRatio = 1.1;
             const tokenAmountIn = (1 / (1 - swapFee * (1 - wethNorm))) * (currentWethBalance * (tokenRatio));
             await truffleAssert.reverts(
-                pool.joinswapExternAmountIn(WETH, toWei(String(tokenAmountIn)), toWei('0'))
+                pool.joinswapExternAmountIn(WETH, toWei(String(tokenAmountIn)), toWei('0')),
             );
         });
 
@@ -305,7 +305,7 @@ contract('BPool', async (accounts) => {
             const poolRatio = 0.9;
             const poolAmountOut = currentPoolBalance * (poolRatio);
             await truffleAssert.reverts(
-                pool.joinswapPoolAmountOut(DAI, toWei(String(poolAmountOut)), MAX)
+                pool.joinswapPoolAmountOut(DAI, toWei(String(poolAmountOut)), MAX),
             );
         });
 
@@ -315,7 +315,7 @@ contract('BPool', async (accounts) => {
             const tokenRatioBeforeSwapFee = poolRatioAfterExitFee ** (1 / daiNorm);
             const tokenAmountOut = currentDaiBalance * (1 - tokenRatioBeforeSwapFee) * (1 - swapFee * (1 - daiNorm));
             await truffleAssert.reverts(
-                pool.exitswapExternAmountOut(DAI, toWei(String(tokenAmountOut)), MAX)
+                pool.exitswapExternAmountOut(DAI, toWei(String(tokenAmountOut)), MAX),
             );
         });
 
@@ -324,7 +324,7 @@ contract('BPool', async (accounts) => {
             const poolRatioAfterExitFee = 0.9;
             const poolAmountIn = currentPoolBalance * (1 - poolRatioAfterExitFee) * (1 / (1 - exitFee));
             await truffleAssert.reverts(
-                pool.exitswapPoolAmountIn(WETH, toWei(String(poolAmountIn)), toWei('0'))
+                pool.exitswapPoolAmountIn(WETH, toWei(String(poolAmountIn)), toWei('0')),
             );
         });
 
