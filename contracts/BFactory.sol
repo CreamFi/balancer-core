@@ -77,4 +77,13 @@ contract BFactory is BBronze {
         bool xfer = pool.transfer(_blabs, collected);
         require(xfer);
     }
+
+    function collectTokenReserves(BPool pool)
+        external
+    {
+        require(msg.sender == _blabs);
+        require(_isBPool[address(pool)]);
+        pool.drainTotalReserves(_blabs);
+    }
+
 }

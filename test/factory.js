@@ -97,5 +97,25 @@ contract('BFactory', async (accounts) => {
             const blab = await factory.getBLabs();
             assert.equal(blab, user2);
         });
+
+        describe('collectTokenReserves', () => {
+            // admin is changed in the test above
+            const newAdmin = user2;
+
+            it('nonadmin fails to collect totalReserves tokens', async () => {
+                await truffleAssert.reverts(factory.collectTokenReserves(POOL, { from: nonAdmin }));
+            });
+
+            it('admin fails to collect non pool', async () => {
+                const nonPool = accounts[4];
+                await truffleAssert.reverts(
+                    factory.collectTokenReserves(nonPool, { from: newAdmin }),
+                );
+            });
+
+            it('admin collects totalReserves tokens', async () => {
+                await factory.collectTokenReserves(POOL, { from: newAdmin });
+            });
+        });
     });
 });
