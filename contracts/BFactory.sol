@@ -28,6 +28,11 @@ contract BFactory is BBronze {
         address indexed blabs
     );
 
+    event LOG_RESERVES_ADDRESS(
+        address indexed caller,
+        address indexed reservesAddress
+    );
+
     mapping(address=>bool) private _isBPool;
 
     function isBPool(address b)
@@ -49,9 +54,11 @@ contract BFactory is BBronze {
     }
 
     address private _blabs;
+    address private _reservesAddress;
 
     constructor() public {
         _blabs = msg.sender;
+        _reservesAddress = msg.sender;
     }
 
     function getBLabs()
@@ -69,12 +76,27 @@ contract BFactory is BBronze {
         _blabs = b;
     }
 
+    function getReservesAddress()
+        external view
+        returns (address)
+    {
+        return _reservesAddress;
+    }
+
+    function setReservesAddress(address a)
+        external
+    {
+        require(msg.sender == _blabs);
+        emit LOG_RESERVES_ADDRESS(msg.sender, a);
+        _reservesAddress = a;
+    }
+
     function collect(BPool pool)
         external 
     {
         require(msg.sender == _blabs);
         uint collected = IERC20(pool).balanceOf(address(this));
-        bool xfer = pool.transfer(_blabs, collected);
+        bool xfer = pool.transfer(_reservesAddress, collected);
         require(xfer);
     }
 
@@ -83,7 +105,7 @@ contract BFactory is BBronze {
     {
         require(msg.sender == _blabs);
         require(_isBPool[address(pool)]);
-        pool.drainTotalReserves(_blabs);
+        pool.drainTotalReserves(_reservesAddress);
     }
 
 }

@@ -7,6 +7,7 @@ contract('BFactory', async (accounts) => {
     const admin = accounts[0];
     const nonAdmin = accounts[1];
     const user2 = accounts[2];
+    const reserveAddress = accounts[3];
     const { toWei } = web3.utils;
     const { fromWei } = web3.utils;
     const { hexToUtf8 } = web3.utils;
@@ -98,10 +99,27 @@ contract('BFactory', async (accounts) => {
             assert.equal(blab, user2);
         });
 
-        describe('collectTokenReserves', () => {
-            // admin is changed in the test above
-            const newAdmin = user2;
+        // admin is changed in the test above
+        const newAdmin = user2;
 
+        describe('reservesAddress', () => {
+            it('`getReservesAddress` is default to be the original `_blabs`', async () => {
+                const r = await factory.getReservesAddress.call();
+                assert.equal(r, admin);
+            });
+
+            it('nonadmin cant set reservesAddress', async () => {
+                await truffleAssert.reverts(factory.setReservesAddress(nonAdmin, { from: nonAdmin }));
+            });
+
+            it('admin changes reservesAddress', async () => {
+                await factory.setReservesAddress(reserveAddress, { from: newAdmin });
+                const r = await factory.getReservesAddress();
+                assert.equal(r, reserveAddress);
+            });
+        });
+
+        describe('collectTokenReserves', () => {
             it('nonadmin fails to collect totalReserves tokens', async () => {
                 await truffleAssert.reverts(factory.collectTokenReserves(POOL, { from: nonAdmin }));
             });
