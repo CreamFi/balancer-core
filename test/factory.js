@@ -65,7 +65,7 @@ contract('BFactory', async (accounts) => {
         });
 
         it('fails nonAdmin calls collect', async () => {
-            await truffleAssert.reverts(factory.collect(nonAdmin, { from: nonAdmin }), 'ERR_NOT_BLABS');
+            await truffleAssert.reverts(factory.collect(nonAdmin, { from: nonAdmin }));
         });
 
         it('admin collects fees', async () => {
@@ -85,11 +85,11 @@ contract('BFactory', async (accounts) => {
         });
 
         it('nonadmin cant create new pools', async () => {
-            await truffleAssert.reverts(factory.newBPool({ from: nonAdmin }), 'ERR_NOT_BLABS');
+            await truffleAssert.reverts(factory.newBPool({ from: nonAdmin }));
         });
 
         it('nonadmin cant set blabs address', async () => {
-            await truffleAssert.reverts(factory.setBLabs(nonAdmin, { from: nonAdmin }), 'ERR_NOT_BLABS');
+            await truffleAssert.reverts(factory.setBLabs(nonAdmin, { from: nonAdmin }));
         });
 
         it('admin changes blabs address', async () => {

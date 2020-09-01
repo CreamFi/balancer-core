@@ -48,14 +48,14 @@ contract BTokenBase is BNum {
     }
 
     function _burn(uint amt) internal {
-        require(_balance[address(this)] >= amt, "ERR_INSUFFICIENT_BAL");
+        require(_balance[address(this)] >= amt);
         _balance[address(this)] = bsub(_balance[address(this)], amt);
         _totalSupply = bsub(_totalSupply, amt);
         emit Transfer(address(this), address(0), amt);
     }
 
     function _move(address src, address dst, uint amt) internal {
-        require(_balance[src] >= amt, "ERR_INSUFFICIENT_BAL");
+        require(_balance[src] >= amt);
         _balance[src] = bsub(_balance[src], amt);
         _balance[dst] = badd(_balance[dst], amt);
         emit Transfer(src, dst, amt);
@@ -129,7 +129,7 @@ contract BToken is BTokenBase, IERC20 {
     }
 
     function transferFrom(address src, address dst, uint amt) external returns (bool) {
-        require(msg.sender == src || amt <= _allowance[src][msg.sender], "ERR_BTOKEN_BAD_CALLER");
+        require(msg.sender == src || amt <= _allowance[src][msg.sender]);
         _move(src, dst, amt);
         if (msg.sender != src && _allowance[src][msg.sender] != uint256(-1)) {
             _allowance[src][msg.sender] = bsub(_allowance[src][msg.sender], amt);
