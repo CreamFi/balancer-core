@@ -477,7 +477,7 @@ contract BPool is BBronze, BToken, BMath {
         );
 
         inRecord.balance = badd(inRecord.balance, tokenAmountIn);
-        // Subtract `reserves` which is reserved for admin.
+        // Subtract `reserves`.
         outRecord.balance = bsub(bsub(outRecord.balance, tokenAmountOut), reserves);
 
         spotPriceAfter = calcSpotPrice(
@@ -621,7 +621,7 @@ contract BPool is BBronze, BToken, BMath {
 
         emit LOG_JOIN(msg.sender, tokenIn, tokenAmountIn);
 
-        _mintPoolShare(poolAmountOut + reserves);
+        _mintPoolShare(badd(poolAmountOut, reserves));
         _pushPoolShare(msg.sender, poolAmountOut);
         _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
 
