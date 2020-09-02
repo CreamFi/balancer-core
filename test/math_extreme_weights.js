@@ -1,7 +1,7 @@
 const Decimal = require('decimal.js');
 const truffleAssert = require('truffle-assertions');
 const {
-    calcRelativeDiff, calcPoolOutGivenSingleIn, calcSingleInGivenPoolOut, calcReserves, calcPoolInGivenSingleOut,
+    calcRelativeDiff, calcSingleInGivenPoolOut, calcReserves,
 } = require('../lib/calc_comparisons');
 
 const BPool = artifacts.require('BPool');
@@ -244,32 +244,15 @@ contract('BPool', async (accounts) => {
             // Call function
             const tokenRatio = 1.1;
             // increase tbalance by 1.1 after swap fee
-            const tokenAmountIn = (1 / (1 - swapFee * (1 - wethNorm))) * (currentWethBalance * (tokenRatio - 1));
+            const tokenAmountInAfterFee = currentWethBalance * (tokenRatio - 1);
+            const tokenAmountIn = (1 / (1 - swapFee * (1 - wethNorm))) * tokenAmountInAfterFee;
             await pool.joinswapExternAmountIn(WETH, toWei(String(tokenAmountIn)), toWei('0'));
-            const poolTokenOut = calcPoolOutGivenSingleIn(
-                currentWethBalance,
-                wethDenorm,
-                currentPoolBalance,
-                sumWeights,
-                tokenAmountIn,
-                swapFee,
-            );
-            const poolTokenOutZeroFee = calcPoolOutGivenSingleIn(
-                currentWethBalance,
-                wethDenorm,
-                currentPoolBalance,
-                sumWeights,
-                tokenAmountIn,
-                0,
-            );
-            const reserves = calcReserves(poolTokenOutZeroFee, poolTokenOut);
+            const reserves = calcReserves(tokenAmountIn, tokenAmountInAfterFee);
             // Update balance states
             previousWethBalance = currentWethBalance;
-            currentWethBalance = currentWethBalance.add(Decimal(tokenAmountIn));
+            currentWethBalance = currentWethBalance.add(Decimal(tokenAmountIn)).sub(reserves);
             previousPoolBalance = currentPoolBalance;
             currentPoolBalance = currentPoolBalance.mul(Decimal(tokenRatio).pow(wethNorm)); // increase by 1.1**wethNorm
-            // Add the reserves(reserved pool token)
-            currentPoolBalance = currentPoolBalance.plus(reserves);
 
             // Print current balances after operation
             await logAndAssertCurrentBalances();
@@ -353,32 +336,16 @@ contract('BPool', async (accounts) => {
             // Call function
             const poolRatioAfterExitFee = 0.9;
             const tokenRatioBeforeSwapFee = poolRatioAfterExitFee ** (1 / daiNorm);
-            const tokenAmountOut = currentDaiBalance * (1 - tokenRatioBeforeSwapFee) * (1 - swapFee * (1 - daiNorm));
+            const tokenAmountOutBeforeSwapFee = currentDaiBalance * (1 - tokenRatioBeforeSwapFee);
+            const tokenAmountOut = tokenAmountOutBeforeSwapFee * (1 - swapFee * (1 - daiNorm));
+            const reserves = calcReserves(tokenAmountOutBeforeSwapFee, tokenAmountOut);
             await pool.exitswapExternAmountOut(DAI, toWei(String(tokenAmountOut)), MAX);
             // Update balance states
             previousDaiBalance = currentDaiBalance;
-            currentDaiBalance = currentDaiBalance.sub(Decimal(tokenAmountOut));
+            currentDaiBalance = currentDaiBalance.sub(Decimal(tokenAmountOut)).sub(reserves);
             previousPoolBalance = currentPoolBalance;
-            const poolAmountIn = calcPoolInGivenSingleOut(
-                previousDaiBalance,
-                daiDenorm,
-                previousPoolBalance,
-                sumWeights,
-                tokenAmountOut,
-                swapFee,
-                exitFee,
-            );
-            const poolAmountInZeroFee = calcPoolInGivenSingleOut(
-                previousDaiBalance,
-                daiDenorm,
-                previousPoolBalance,
-                sumWeights,
-                tokenAmountOut,
-                0,
-                exitFee,
-            );
-            const reserves = calcReserves(poolAmountIn, poolAmountInZeroFee);
-            currentPoolBalance = previousPoolBalance.sub(poolAmountIn.sub(reserves.add(exitFee)));
+            const balanceChange = previousPoolBalance.mul(Decimal(1).sub(Decimal(poolRatioAfterExitFee)));
+            currentPoolBalance = currentPoolBalance.sub(balanceChange);
 
             // Print current balances after operation
             await logAndAssertCurrentBalances();

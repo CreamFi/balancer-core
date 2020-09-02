@@ -593,7 +593,8 @@ contract BPool is BBronze, BToken, BMath {
 
         Record storage inRecord = _records[tokenIn];
 
-        poolAmountOut = calcPoolOutGivenSingleIn(
+        uint reserves;
+        (poolAmountOut, reserves) = calcPoolOutGivenSingleIn(
                             inRecord.balance,
                             inRecord.denorm,
                             _totalSupply,
@@ -604,24 +605,13 @@ contract BPool is BBronze, BToken, BMath {
 
         require(poolAmountOut >= minPoolAmountOut, "ERR_LIMIT_OUT");
 
-        uint poolAmountOutZeroFee = calcPoolOutGivenSingleIn(
-            inRecord.balance,
-            inRecord.denorm,
-            _totalSupply,
-            _totalWeight,
-            tokenAmountIn,
-            0
-        );
-        uint reserves = calcReserves(
-            poolAmountOutZeroFee,
-            poolAmountOut
-        );
-
-        inRecord.balance = badd(inRecord.balance, tokenAmountIn);
+        inRecord.balance = bsub(badd(inRecord.balance, tokenAmountIn), reserves);
 
         emit LOG_JOIN(msg.sender, tokenIn, tokenAmountIn);
 
-        _mintPoolShare(badd(poolAmountOut, reserves));
+        totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
+
+        _mintPoolShare(poolAmountOut);
         _pushPoolShare(msg.sender, poolAmountOut);
         _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
 
@@ -744,7 +734,8 @@ contract BPool is BBronze, BToken, BMath {
 
         Record storage outRecord = _records[tokenOut];
 
-        poolAmountIn = calcPoolInGivenSingleOut(
+        uint reserves;
+        (poolAmountIn, reserves) = calcPoolInGivenSingleOut(
                             outRecord.balance,
                             outRecord.denorm,
                             _totalSupply,
@@ -756,38 +747,17 @@ contract BPool is BBronze, BToken, BMath {
         require(poolAmountIn != 0, "ERR_MATH_APPROX");
         require(poolAmountIn <= maxPoolAmountIn, "ERR_LIMIT_IN");
 
-        uint poolAmountInZeroFee = calcPoolInGivenSingleOut(
-            outRecord.balance,
-            outRecord.denorm,
-            _totalSupply,
-            _totalWeight,
-            tokenAmountOut,
-            0
-        );
-        uint reserves = calcReserves(
-            poolAmountIn,
-            poolAmountInZeroFee
-        );
-
-        outRecord.balance = bsub(outRecord.balance, tokenAmountOut);
+        outRecord.balance = bsub(bsub(outRecord.balance, tokenAmountOut), reserves);
 
         uint exitFee = bmul(poolAmountIn, EXIT_FEE);
-        uint exitFeeAndReserves = badd(exitFee, reserves);
 
         emit LOG_EXIT(msg.sender, tokenOut, tokenAmountOut);
 
+        totalReserves[address(tokenOut)] = badd(totalReserves[address(tokenOut)], reserves);
+
         _pullPoolShare(msg.sender, poolAmountIn);
-        // poolAmountIn - exitFeeAndReserves >= 0
-        //  poolAmountIn - (exitFee + reserves)
-        // = poolAmountIn - ((poolAmountIn * EXIT_FEE) +
-        //   (poolAmountIn - poolAmountInZeroFee) * RESERVES_RATIO)
-        // = (poolAmountIn * (1 - RESERVES_RATIO)) + (poolAmountInZeroFee * RESERVES_RATIO) -
-        //   (poolAmountIn * EXIT_FEE)
-        // >= (poolAmountIn * (1 - RESERVES_RATIO)) + (poolAmountIn * RESERVES_RATIO) -
-        //   (poolAmountIn * EXIT_FEE)
-        // = poolAmountIn * (1 - EXIT_FEE) >= 0,  because 0 <= EXIT_FEE <= 1
-        _burnPoolShare(bsub(poolAmountIn, exitFeeAndReserves));
-        _pushPoolShare(_factory, exitFeeAndReserves);
+        _burnPoolShare(bsub(poolAmountIn, exitFee));
+        _pushPoolShare(_factory, exitFee);
         _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);        
 
         return poolAmountIn;
