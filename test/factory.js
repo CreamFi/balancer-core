@@ -84,7 +84,7 @@ contract('BFactory', async (accounts) => {
             assert.equal(fromWei(adminBalance), '100');
         });
 
-        it('nonadmin cant create new pools', async() => {
+        it('nonadmin cant create new pools', async () => {
             await truffleAssert.reverts(factory.newBPool({ from: nonAdmin }), 'ERR_NOT_BLABS');
         });
 

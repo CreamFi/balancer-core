@@ -1,6 +1,8 @@
 const Decimal = require('decimal.js');
 const truffleAssert = require('truffle-assertions');
-const { calcRelativeDiff } = require('../lib/calc_comparisons');
+const {
+    calcRelativeDiff, calcSingleInGivenPoolOut, calcReserves,
+} = require('../lib/calc_comparisons');
 
 const BPool = artifacts.require('BPool');
 const BFactory = artifacts.require('BFactory');
@@ -136,8 +138,7 @@ contract('BPool', async (accounts) => {
             }
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
-
-            expected = Decimal('74.1844011380065814');
+            expected = Decimal('74.1846535049645437');
             actual = Decimal(fromWei(output.spotPriceAfter));
             relDif = calcRelativeDiff(expected, actual);
 
@@ -177,7 +178,7 @@ contract('BPool', async (accounts) => {
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
 
-            expected = Decimal('31306034272.9265099');
+            expected = Decimal('31290381255.8268333');
             actual = Decimal(fromWei(output.spotPriceAfter));
             relDif = calcRelativeDiff(expected, actual);
 
@@ -243,11 +244,13 @@ contract('BPool', async (accounts) => {
             // Call function
             const tokenRatio = 1.1;
             // increase tbalance by 1.1 after swap fee
-            const tokenAmountIn = (1 / (1 - swapFee * (1 - wethNorm))) * (currentWethBalance * (tokenRatio - 1));
+            const tokenAmountInAfterFee = currentWethBalance * (tokenRatio - 1);
+            const tokenAmountIn = (1 / (1 - swapFee * (1 - wethNorm))) * tokenAmountInAfterFee;
             await pool.joinswapExternAmountIn(WETH, toWei(String(tokenAmountIn)), toWei('0'));
+            const reserves = calcReserves(tokenAmountIn, tokenAmountInAfterFee);
             // Update balance states
             previousWethBalance = currentWethBalance;
-            currentWethBalance = currentWethBalance.add(Decimal(tokenAmountIn));
+            currentWethBalance = currentWethBalance.add(Decimal(tokenAmountIn)).sub(reserves);
             previousPoolBalance = currentPoolBalance;
             currentPoolBalance = currentPoolBalance.mul(Decimal(tokenRatio).pow(wethNorm)); // increase by 1.1**wethNorm
 
@@ -265,9 +268,24 @@ contract('BPool', async (accounts) => {
             previousPoolBalance = currentPoolBalance;
             currentPoolBalance = currentPoolBalance.mul(Decimal(poolRatio)); // increase by 1.1
             previousDaiBalance = currentDaiBalance;
-            const numer = previousDaiBalance.mul(Decimal(poolRatio).pow(Decimal(1).div(daiNorm)).sub(Decimal(1)));
-            const denom = Decimal(1).sub((Decimal(swapFee)).mul((Decimal(1).sub(daiNorm))));
-            currentDaiBalance = currentDaiBalance.plus(numer.div(denom));
+            const tokenAmountIn = calcSingleInGivenPoolOut(
+                previousDaiBalance,
+                daiDenorm,
+                previousPoolBalance,
+                sumWeights,
+                poolAmountOut,
+                swapFee,
+            );
+            const tokenAmountInZeroFee = calcSingleInGivenPoolOut(
+                previousDaiBalance,
+                daiDenorm,
+                previousPoolBalance,
+                sumWeights,
+                poolAmountOut,
+                0,
+            );
+            const reserves = calcReserves(tokenAmountIn, tokenAmountInZeroFee);
+            currentDaiBalance = currentDaiBalance.plus(tokenAmountIn).sub(reserves);
 
             // Print current balances after operation
             await logAndAssertCurrentBalances();
@@ -318,11 +336,13 @@ contract('BPool', async (accounts) => {
             // Call function
             const poolRatioAfterExitFee = 0.9;
             const tokenRatioBeforeSwapFee = poolRatioAfterExitFee ** (1 / daiNorm);
-            const tokenAmountOut = currentDaiBalance * (1 - tokenRatioBeforeSwapFee) * (1 - swapFee * (1 - daiNorm));
+            const tokenAmountOutBeforeSwapFee = currentDaiBalance * (1 - tokenRatioBeforeSwapFee);
+            const tokenAmountOut = tokenAmountOutBeforeSwapFee * (1 - swapFee * (1 - daiNorm));
+            const reserves = calcReserves(tokenAmountOutBeforeSwapFee, tokenAmountOut);
             await pool.exitswapExternAmountOut(DAI, toWei(String(tokenAmountOut)), MAX);
             // Update balance states
             previousDaiBalance = currentDaiBalance;
-            currentDaiBalance = currentDaiBalance.sub(Decimal(tokenAmountOut));
+            currentDaiBalance = currentDaiBalance.sub(Decimal(tokenAmountOut)).sub(reserves);
             previousPoolBalance = currentPoolBalance;
             const balanceChange = previousPoolBalance.mul(Decimal(1).sub(Decimal(poolRatioAfterExitFee)));
             currentPoolBalance = currentPoolBalance.sub(balanceChange);

@@ -123,16 +123,19 @@ contract BMath is BBronze, BConst, BNum {
         uint swapFee
     )
         public pure
-        returns (uint poolAmountOut)
+        returns (uint poolAmountOut, uint reserves)
     {
         // Charge the trading fee for the proportion of tokenAi
         ///  which is implicitly traded to the other pool tokens.
         // That proportion is (1- weightTokenIn)
         // tokenAiAfterFee = tAi * (1 - (1-weightTi) * poolFee);
         uint normalizedWeight = bdiv(tokenWeightIn, totalWeight);
-        uint zaz = bmul(bsub(BONE, normalizedWeight), swapFee); 
+        uint portionToChargeFee = bsub(BONE, normalizedWeight);
+        // Exact fee portion of `tokenAmountIn`, i.e. (1- Wt)
+        uint zaz = bmul(portionToChargeFee, swapFee);
         uint tokenAmountInAfterFee = bmul(tokenAmountIn, bsub(BONE, zaz));
 
+        reserves = calcReserves(tokenAmountIn, tokenAmountInAfterFee);
         uint newTokenBalanceIn = badd(tokenBalanceIn, tokenAmountInAfterFee);
         uint tokenInRatio = bdiv(newTokenBalanceIn, tokenBalanceIn);
 
@@ -140,7 +143,7 @@ contract BMath is BBronze, BConst, BNum {
         uint poolRatio = bpow(tokenInRatio, normalizedWeight);
         uint newPoolSupply = bmul(poolRatio, poolSupply);
         poolAmountOut = bsub(newPoolSupply, poolSupply);
-        return poolAmountOut;
+        return (poolAmountOut, reserves);
     }
 
     /**********************************************************************************************
@@ -243,7 +246,7 @@ contract BMath is BBronze, BConst, BNum {
         uint swapFee
     )
         public pure
-        returns (uint poolAmountIn)
+        returns (uint poolAmountIn, uint reserves)
     {
 
         // charge swap fee on the output token side 
@@ -252,6 +255,7 @@ contract BMath is BBronze, BConst, BNum {
         uint zoo = bsub(BONE, normalizedWeight);
         uint zar = bmul(zoo, swapFee); 
         uint tokenAmountOutBeforeSwapFee = bdiv(tokenAmountOut, bsub(BONE, zar));
+        reserves = calcReserves(tokenAmountOutBeforeSwapFee, tokenAmountOut);
 
         uint newTokenBalanceOut = bsub(tokenBalanceOut, tokenAmountOutBeforeSwapFee);
         uint tokenOutRatio = bdiv(newTokenBalanceOut, tokenBalanceOut);
@@ -264,8 +268,21 @@ contract BMath is BBronze, BConst, BNum {
         // charge exit fee on the pool token side
         // pAi = pAiAfterExitFee/(1-exitFee)
         poolAmountIn = bdiv(poolAmountInAfterExitFee, bsub(BONE, EXIT_FEE));
-        return poolAmountIn;
+        return (poolAmountIn, reserves);
     }
 
+    // `swapFeeAndReserves = amountWithFee - amountWithoutFee` is the swap fee in balancer.
+    // We divide `swapFeeAndReserves` into halves, `actualSwapFee` and `reserves`.
+    // `reserves` goes to the admin and `actualSwapFee` still goes to the liquidity
+    // providers.
+    function calcReserves(uint amountWithFee, uint amountWithoutFee)
+        internal pure
+        returns (uint reserves)
+    {
+        require(amountWithFee >= amountWithoutFee, "ERR_WRONG_FEE");
+        uint swapFeeAndReserves = bsub(amountWithFee, amountWithoutFee);
+        reserves = bmul(swapFeeAndReserves, RESERVES_RATIO);
+        require(swapFeeAndReserves >= reserves, "ERR_WRONG_RESERVES");
+    }
 
 }

@@ -60,22 +60,6 @@ jobs:
       - run:
           name: Run tests
           command: yarn test
-  
-  coverage:
-    docker:
-      - image: circleci/node:11
-    working_directory: ~/balancer
-    steps:
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          name: Fetch solc version
-          command: docker pull ethereum/solc:0.5.11
-      - restore_cache:
-          key: balancer-contracts-build-{{ .Environment.CIRCLE_SHA1 }}
-      - run:
-          name: Coverage
-          command: yarn coverage && cat coverage/lcov.info | ./node_modules/.bin/coveralls
 
   slither:
     docker:
@@ -102,9 +86,6 @@ workflows:
           requires:
             - checkout_and_install
       - test:
-          requires:
-            - build
-      - coverage:
           requires:
             - build
       - slither:

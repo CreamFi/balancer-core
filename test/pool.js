@@ -1,5 +1,7 @@
 const truffleAssert = require('truffle-assertions');
-const { calcOutGivenIn, calcInGivenOut, calcRelativeDiff } = require('../lib/calc_comparisons');
+const {
+    calcSpotPrice, calcOutGivenIn, calcInGivenOut, calcRelativeDiff,
+} = require('../lib/calc_comparisons');
 
 const BPool = artifacts.require('BPool');
 const BFactory = artifacts.require('BFactory');
@@ -395,6 +397,7 @@ contract('BPool', async (accounts) => {
         it('swapExactAmountIn', async () => {
             // 2.5 WETH -> DAI
             const expected = calcOutGivenIn(52.5, 5, 10500, 5, 2.5, 0.003);
+            const expectedZeroFee = calcOutGivenIn(52.5, 5, 10500, 5, 2.5, 0);
             const txr = await pool.swapExactAmountIn(
                 WETH,
                 toWei('2.5'),
@@ -418,12 +421,28 @@ contract('BPool', async (accounts) => {
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
 
+            // Test: `totalReserves` is updated correctly.
+            const reservesDai = await pool.totalReserves.call(DAI);
+            const reservesWETH = await pool.totalReserves.call(WETH);
+            const expectedReservesDai = (expectedZeroFee - expected) / 2;
+            assert.approximately(Number(fromWei(reservesDai)), expectedReservesDai, errorDelta);
+            assert.equal(fromWei(reservesWETH), 0);
+
             const userDaiBalance = await dai.balanceOf(user2);
             assert.equal(fromWei(userDaiBalance), Number(fromWei(log.args[4])));
 
-            // 182.804672101083406128
+            // Test: `spotPrice` calculated inside the contract is approximate to the
+            //  one calculated outside.
             const wethPrice = await pool.getSpotPrice(DAI, WETH);
-            const wethPriceFeeCheck = ((10024.094194662908577 / 5) / (55 / 5)) * (1 / (1 - 0.003));
+            const curDAIBalance = await pool.getBalance.call(DAI);
+            const curWETHBalance = await pool.getBalance.call(WETH);
+            const wethPriceFeeCheck = calcSpotPrice(
+                fromWei(curDAIBalance),
+                5,
+                fromWei(curWETHBalance),
+                5,
+                0.003,
+            );
             assert.approximately(Number(fromWei(wethPrice)), Number(wethPriceFeeCheck), errorDelta);
 
             const daiNormWeight = await pool.getNormalizedWeight(DAI);
@@ -434,6 +453,7 @@ contract('BPool', async (accounts) => {
             // ETH -> 1 MKR
             // const amountIn = (55 * (((21 / (21 - 1)) ** (5 / 5)) - 1)) / (1 - 0.003);
             const expected = calcInGivenOut(55, 5, 21, 5, 1, 0.003);
+            const expectedZeroFee = calcInGivenOut(55, 5, 21, 5, 1, 0);
             const txr = await pool.swapExactAmountOut(
                 WETH,
                 toWei('3'),
@@ -445,6 +465,13 @@ contract('BPool', async (accounts) => {
             const log = txr.logs[0];
             assert.equal(log.event, 'LOG_SWAP');
             // 2.758274824473420261
+
+            // Test: `totalReserves` is updated correctly.
+            const reservesWETH = await pool.totalReserves.call(WETH);
+            const reservesMKR = await pool.totalReserves.call(MKR);
+            const expectedReservesWETH = (expected - expectedZeroFee) / 2;
+            assert.approximately(Number(fromWei(reservesWETH)), expectedReservesWETH, errorDelta);
+            assert.equal(fromWei(reservesMKR), 0);
 
             const actual = fromWei(log.args[3]);
             const relDif = calcRelativeDiff(expected, actual);
