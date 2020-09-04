@@ -40,7 +40,7 @@ contract BFactory is BBronze {
         external
         returns (BPool)
     {
-        require(msg.sender == _blabs, "ERR_NOT_BLABS");
+        require(msg.sender == _blabs);
         BPool bpool = new BPool();
         _isBPool[address(bpool)] = true;
         emit LOG_NEW_POOL(msg.sender, address(bpool));
@@ -64,7 +64,7 @@ contract BFactory is BBronze {
     function setBLabs(address b)
         external
     {
-        require(msg.sender == _blabs, "ERR_NOT_BLABS");
+        require(msg.sender == _blabs);
         emit LOG_BLABS(msg.sender, b);
         _blabs = b;
     }
@@ -72,9 +72,18 @@ contract BFactory is BBronze {
     function collect(BPool pool)
         external 
     {
-        require(msg.sender == _blabs, "ERR_NOT_BLABS");
+        require(msg.sender == _blabs);
         uint collected = IERC20(pool).balanceOf(address(this));
         bool xfer = pool.transfer(_blabs, collected);
-        require(xfer, "ERR_ERC20_FAILED");
+        require(xfer);
     }
+
+    function collectTokenReserves(BPool pool)
+        external
+    {
+        require(msg.sender == _blabs);
+        require(_isBPool[address(pool)]);
+        pool.drainTotalReserves(_blabs);
+    }
+
 }

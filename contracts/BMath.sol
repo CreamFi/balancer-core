@@ -279,10 +279,10 @@ contract BMath is BBronze, BConst, BNum {
         internal pure
         returns (uint reserves)
     {
-        require(amountWithFee >= amountWithoutFee, "ERR_WRONG_FEE");
+        require(amountWithFee >= amountWithoutFee);
         uint swapFeeAndReserves = bsub(amountWithFee, amountWithoutFee);
         reserves = bmul(swapFeeAndReserves, RESERVES_RATIO);
-        require(swapFeeAndReserves >= reserves, "ERR_WRONG_RESERVES");
+        require(swapFeeAndReserves >= reserves);
     }
 
 }
