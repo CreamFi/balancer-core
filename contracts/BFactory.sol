@@ -33,6 +33,11 @@ contract BFactory is BBronze {
         address indexed reservesAddress
     );
 
+    event LOG_ALLOW_NON_ADMIN_POOL(
+        address indexed caller,
+        bool allow
+    );
+
     mapping(address=>bool) private _isBPool;
 
     function isBPool(address b)
@@ -45,7 +50,9 @@ contract BFactory is BBronze {
         external
         returns (BPool)
     {
-        require(msg.sender == _blabs);
+        if (!_allowNonAdminPool) {
+            require(msg.sender == _blabs);
+        }
         BPool bpool = new BPool();
         _isBPool[address(bpool)] = true;
         emit LOG_NEW_POOL(msg.sender, address(bpool));
@@ -56,9 +63,27 @@ contract BFactory is BBronze {
     address private _blabs;
     address private _reservesAddress;
 
+    bool private _allowNonAdminPool;
+
     constructor() public {
         _blabs = msg.sender;
         _reservesAddress = msg.sender;
+        _allowNonAdminPool = false;
+    }
+
+    function getAllowNonAdminPool()
+        external view
+        returns (bool)
+    {
+        return _allowNonAdminPool;
+    }
+
+    function setAllowNonAdminPool(bool b)
+        external
+    {
+        require(msg.sender == _blabs, "ERR_NOT_BLABS");
+        emit LOG_ALLOW_NON_ADMIN_POOL(msg.sender, b);
+        _allowNonAdminPool = b;
     }
 
     function getBLabs()
