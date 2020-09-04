@@ -12,6 +12,7 @@ contract('BPool', async (accounts) => {
     const admin = accounts[0];
     const user1 = accounts[1];
     const user2 = accounts[2];
+    const reservesAddress = accounts[3];
     const { toWei } = web3.utils;
     const { fromWei } = web3.utils;
     const errorDelta = 10 ** -8;
@@ -572,24 +573,33 @@ contract('BPool', async (accounts) => {
     describe('drainTokenReserves', () => {
         // NOTE: call `factory.collectTokenReserves` instead of `pool.drainTokenReserves` directly
         // for testing, since only the factory can call `drainTokenReserves`.
-        it('Reserves should go to admin after `factory.collectTokenReserves`', async () => {
+        it('Reserves should go to reservesAddress after factory.collectTokenReserves', async () => {
+            await factory.setReservesAddress(reservesAddress);
+
             const reservesDAI = fromWei(await pool.totalReserves.call(DAI));
             const reservesWETH = fromWei(await pool.totalReserves.call(WETH));
-            const adminBalanceDAI = fromWei(await dai.balanceOf.call(admin));
-            const adminBalanceWETH = fromWei(await weth.balanceOf.call(admin));
+            const reservesAddressBalanceDAI = fromWei(await dai.balanceOf.call(reservesAddress));
+            const reservesAddressBalanceWETH = fromWei(await weth.balanceOf.call(reservesAddress));
 
             await factory.collectTokenReserves(POOL);
 
             const reservesDAIAfter = fromWei(await pool.totalReserves.call(DAI));
             const reservesWETHAfter = fromWei(await pool.totalReserves.call(WETH));
-            const adminBalanceDAIAfter = fromWei(await dai.balanceOf.call(admin));
-            const adminBalanceWETHAfter = fromWei(await weth.balanceOf.call(admin));
+            const reservesAddressBalanceDAIAfter = fromWei(
+                await dai.balanceOf.call(reservesAddress),
+            );
+            const reservesAddressBalanceWETHAfter = fromWei(
+                await weth.balanceOf.call(reservesAddress),
+            );
             // All balance in totalReserves should be drained.
             assert.equal(reservesDAIAfter, 0);
             assert.equal(reservesWETHAfter, 0);
             // Drained reserves should go to admin.
-            assert.equal(adminBalanceDAIAfter - adminBalanceDAI, reservesDAI);
-            assert.equal(adminBalanceWETHAfter - adminBalanceWETH, reservesWETH);
+            assert.equal(reservesAddressBalanceDAIAfter - reservesAddressBalanceDAI, reservesDAI);
+            assert.equal(
+                reservesAddressBalanceWETHAfter - reservesAddressBalanceWETH,
+                reservesWETH,
+            );
         });
     });
 });
