@@ -35,7 +35,7 @@ contract BFactory is BBronze {
 
     event LOG_ALLOW_NON_ADMIN_POOL(
         address indexed caller,
-        bool indexed allow
+        bool allow
     );
 
     mapping(address=>bool) private _isBPool;
