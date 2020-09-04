@@ -96,7 +96,7 @@ contract BFactory is BBronze {
     {
         require(msg.sender == _blabs);
         uint collected = IERC20(pool).balanceOf(address(this));
-        bool xfer = pool.transfer(_reservesAddress, collected);
+        bool xfer = pool.transfer(_blabs, collected);
         require(xfer);
     }
 
@@ -107,5 +107,4 @@ contract BFactory is BBronze {
         require(_isBPool[address(pool)]);
         pool.drainTotalReserves(_reservesAddress);
     }
-
 }
