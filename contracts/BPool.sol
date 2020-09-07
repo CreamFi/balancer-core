@@ -51,12 +51,6 @@ contract BPool is BBronze, BToken, BMath {
         uint256         tokenAmountOut
     );
 
-    event LOG_SEIZE(
-        address indexed caller,
-        address indexed token,
-        uint256         tokenAmount
-    );
-
     event LOG_CALL(
         bytes4  indexed sig,
         address indexed caller,
@@ -376,14 +370,16 @@ contract BPool is BBronze, BToken, BMath {
         _records[token].balance = IERC20(token).balanceOf(address(this));
     }
 
-    function seize(address token, uint amount) external {
+    function seize(address token, uint amount)
+        external
+        _logs_
+        _lock_
+    {
         require(msg.sender == _controller);
         require(!_records[token].bound);
 
         uint bal = IERC20(token).balanceOf(address(this));
         require(amount <= bal);
-
-        emit LOG_SEIZE(msg.sender, token, amount);
 
         _pushUnderlying(token, msg.sender, amount);
     }
