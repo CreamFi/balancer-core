@@ -1,6 +1,6 @@
 const truffleAssert = require('truffle-assertions');
 const {
-    calcSpotPrice, calcOutGivenIn, calcInGivenOut, calcRelativeDiff,
+    calcSpotPrice, calcOutGivenIn, calcInGivenOut, calcRelativeDiff, calcReserves,
 } = require('../lib/calc_comparisons');
 
 const BPool = artifacts.require('BPool');
@@ -17,6 +17,7 @@ contract('BPool', async (accounts) => {
     const { fromWei } = web3.utils;
     const errorDelta = 10 ** -8;
     const MAX = web3.utils.toTwosComplement(-1);
+    const reservesRatio = 0.2;
 
     let WETH; let MKR; let DAI; let
         XXX; // addresses
@@ -261,6 +262,18 @@ contract('BPool', async (accounts) => {
             assert.equal(0.003, fromWei(swapFee));
         });
 
+        it('Fails setting wrong reserves ratio', async () => {
+            await truffleAssert.reverts(
+                pool.setSwapFee(toWei('1.1')),
+            );
+        });
+
+        it('Admin sets reserves ratio', async () => {
+            await pool.setReservesRatio(toWei(String(reservesRatio)));
+            const actualReservesRatio = await pool.getReservesRatio();
+            assert.equal(reservesRatio, fromWei(actualReservesRatio));
+        });
+
         it('Fails nonadmin finalizes pool', async () => {
             await truffleAssert.reverts(
                 pool.finalize({ from: user1 }),
@@ -282,9 +295,10 @@ contract('BPool', async (accounts) => {
             );
         });
 
-        it('Cant setPublicSwap, setSwapFee when finalized', async () => {
+        it('Cant setPublicSwap, setSwapFee, setReservesRatio when finalized', async () => {
             await truffleAssert.reverts(pool.setPublicSwap(false));
             await truffleAssert.reverts(pool.setSwapFee(toWei('0.01')));
+            await truffleAssert.reverts(pool.setReservesRatio(toWei('0.01')));
         });
 
         it('Fails binding new token after finalized', async () => {
@@ -390,8 +404,8 @@ contract('BPool', async (accounts) => {
             // Test: `totalReserves` is updated correctly.
             const reservesDai = await pool.totalReserves.call(DAI);
             const reservesWETH = await pool.totalReserves.call(WETH);
-            const expectedReservesDai = (expectedZeroFee - expected) / 2;
-            assert.approximately(Number(fromWei(reservesDai)), expectedReservesDai, errorDelta);
+            const expectedReservesDai = calcReserves(expectedZeroFee, expected, reservesRatio);
+            assert.approximately(Number(fromWei(reservesDai)), Number(expectedReservesDai), errorDelta);
             assert.equal(fromWei(reservesWETH), 0);
 
             const userDaiBalance = await dai.balanceOf(user2);
@@ -435,8 +449,8 @@ contract('BPool', async (accounts) => {
             // Test: `totalReserves` is updated correctly.
             const reservesWETH = await pool.totalReserves.call(WETH);
             const reservesMKR = await pool.totalReserves.call(MKR);
-            const expectedReservesWETH = (expected - expectedZeroFee) / 2;
-            assert.approximately(Number(fromWei(reservesWETH)), expectedReservesWETH, errorDelta);
+            const expectedReservesWETH = calcReserves(expected, expectedZeroFee, reservesRatio);
+            assert.approximately(Number(fromWei(reservesWETH)), Number(expectedReservesWETH), errorDelta);
             assert.equal(fromWei(reservesMKR), 0);
 
             const actual = fromWei(log.args[3]);
