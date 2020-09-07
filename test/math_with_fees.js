@@ -14,6 +14,7 @@ const BFactory = artifacts.require('BFactory');
 const TToken = artifacts.require('TToken');
 const errorDelta = 10 ** -8;
 const swapFee = 10 ** -3; // 0.001;
+const reservesRatio = 0.5;
 const exitFee = 0;
 const verbose = process.env.VERBOSE;
 
@@ -114,6 +115,7 @@ contract('BPool', async (accounts) => {
 
         await pool.setPublicSwap(true);
         await pool.setSwapFee(toWei(String(swapFee)));
+        await pool.setReservesRatio(toWei(String(reservesRatio)));
     });
 
     describe('With fees', () => {
@@ -308,7 +310,7 @@ contract('BPool', async (accounts) => {
             const tAi = (1 / (1 - swapFee * (1 - wethNorm))) * tAiAfterFee;
 
             const pAo = await pool.joinswapExternAmountIn.call(WETH, toWei(String(tAi)), toWei('0'));
-            const reserves = calcReserves(tAi, tAiAfterFee);
+            const reserves = calcReserves(tAi, tAiAfterFee, reservesRatio);
             // Execute txn called above
             await pool.joinswapExternAmountIn(WETH, toWei(String(tAi)), toWei('0'));
 
@@ -353,7 +355,7 @@ contract('BPool', async (accounts) => {
             );
             await pool.joinswapPoolAmountOut(DAI, toWei(String(pAo)), MAX);
 
-            const reserves = calcReserves(tAi, tAiZeroFee);
+            const reserves = calcReserves(tAi, tAiZeroFee, reservesRatio);
             // Update balance states
             previousPoolBalance = currentPoolBalance;
             currentPoolBalance = currentPoolBalance.mul(Decimal(poolRatio)); // increase by 1.1
@@ -398,7 +400,7 @@ contract('BPool', async (accounts) => {
                 0,
                 exitFee,
             );
-            const reserves = calcReserves(tAoZeroFee, tAo);
+            const reserves = calcReserves(tAoZeroFee, tAo, reservesRatio);
             await pool.exitswapPoolAmountIn(WETH, toWei(String(pAi)), toWei('0'));
 
             // Update balance states
@@ -436,7 +438,7 @@ contract('BPool', async (accounts) => {
             const tokenRatioBeforeSwapFee = poolRatioAfterExitFee ** (1 / daiNorm);
             const tAoBeforeSwapFee = currentDaiBalance * (1 - tokenRatioBeforeSwapFee);
             const tAo = currentDaiBalance * (1 - tokenRatioBeforeSwapFee) * (1 - swapFee * (1 - daiNorm));
-            const reserves = calcReserves(tAoBeforeSwapFee, tAo);
+            const reserves = calcReserves(tAoBeforeSwapFee, tAo, reservesRatio);
 
             const pAi = await pool.exitswapExternAmountOut.call(DAI, toWei(String(tAo)), MAX);
             await pool.exitswapExternAmountOut(DAI, toWei(String(tAo)), MAX);

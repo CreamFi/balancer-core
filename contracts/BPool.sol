@@ -83,6 +83,7 @@ contract BPool is BBronze, BToken, BMath {
     // `setSwapFee` and `finalize` require CONTROL
     // `finalize` sets `PUBLIC can SWAP`, `PUBLIC can JOIN`
     uint private _swapFee;
+    uint private _reservesRatio;
     bool private _finalized;
 
     address[] private _tokens;
@@ -95,6 +96,7 @@ contract BPool is BBronze, BToken, BMath {
         _controller = msg.sender;
         _factory = msg.sender;
         _swapFee = MIN_FEE;
+        _reservesRatio = DEFAULT_RESERVES_RATIO;
         _publicSwap = false;
         _finalized = false;
     }
@@ -190,6 +192,14 @@ contract BPool is BBronze, BToken, BMath {
         return _swapFee;
     }
 
+    function getReservesRatio()
+        external view
+        _viewlock_
+        returns (uint)
+    {
+        return _reservesRatio;
+    }
+
     function getController()
         external view
         _viewlock_
@@ -208,6 +218,18 @@ contract BPool is BBronze, BToken, BMath {
         require(swapFee >= MIN_FEE);
         require(swapFee <= MAX_FEE);
         _swapFee = swapFee;
+    }
+
+
+    function setReservesRatio(uint reservesRatio)
+        external
+        _logs_
+        _lock_
+    {
+        require(!_finalized);
+        require(msg.sender == _controller);
+        require(reservesRatio <= BONE);
+        _reservesRatio = reservesRatio;
     }
 
     function setController(address manager)
@@ -479,7 +501,8 @@ contract BPool is BBronze, BToken, BMath {
                         );
         uint reserves = calcReserves(
             tokenAmountOutZeroFee,
-            tokenAmountOut
+            tokenAmountOut,
+            _reservesRatio
         );
 
         inRecord.balance = badd(inRecord.balance, tokenAmountIn);
@@ -557,7 +580,8 @@ contract BPool is BBronze, BToken, BMath {
                         );
         uint reserves = calcReserves(
             tokenAmountIn,
-            tokenAmountInZeroFee
+            tokenAmountInZeroFee,
+            _reservesRatio
         );
 
         // Subtract `reserves` which is reserved for admin.
@@ -606,7 +630,8 @@ contract BPool is BBronze, BToken, BMath {
                             _totalSupply,
                             _totalWeight,
                             tokenAmountIn,
-                            _swapFee
+                            _swapFee,
+                            _reservesRatio
                         );
 
         require(poolAmountOut >= minPoolAmountOut);
@@ -659,7 +684,8 @@ contract BPool is BBronze, BToken, BMath {
         );
         uint reserves = calcReserves(
             tokenAmountIn,
-            tokenAmountInZeroFee
+            tokenAmountInZeroFee,
+            _reservesRatio
         );
 
         inRecord.balance = bsub(badd(inRecord.balance, tokenAmountIn), reserves);
@@ -709,7 +735,8 @@ contract BPool is BBronze, BToken, BMath {
         );
         uint reserves = calcReserves(
             tokenAmountOutZeroFee,
-            tokenAmountOut
+            tokenAmountOut,
+            _reservesRatio
         );
 
         outRecord.balance = bsub(bsub(outRecord.balance, tokenAmountOut), reserves);
@@ -747,7 +774,8 @@ contract BPool is BBronze, BToken, BMath {
                             _totalSupply,
                             _totalWeight,
                             tokenAmountOut,
-                            _swapFee
+                            _swapFee,
+                            _reservesRatio
                         );
 
         require(poolAmountIn != 0);
