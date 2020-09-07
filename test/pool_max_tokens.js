@@ -1,3 +1,4 @@
+const Decimal = require('decimal.js');
 const truffleAssert = require('truffle-assertions');
 
 const BPool = artifacts.require('BPool');
@@ -6,6 +7,7 @@ const TToken = artifacts.require('TToken');
 
 contract('BPool', async (accounts) => {
     const admin = accounts[0];
+    const nonAdmin = accounts[1];
 
     const { toWei } = web3.utils;
     const { fromWei } = web3.utils;
@@ -13,9 +15,11 @@ contract('BPool', async (accounts) => {
     const MAX = web3.utils.toTwosComplement(-1);
 
     let AAA; let BBB; let CCC; let DDD; let EEE; let FFF; let GGG; let HHH; let
-        ZZZ; // addresses
+        ZZZ; let
+        UNBOUND_TOKEN; // addresses
     let aaa; let bbb; let ccc; let ddd; let eee; let fff; let ggg; let hhh; let
-        zzz; // TTokens
+        zzz; let
+        unboundToken; // TTokens
     let factory; // BPool factory
     let FACTORY; // factory address
     let pool; // first pool w/ defaults
@@ -38,6 +42,7 @@ contract('BPool', async (accounts) => {
         ggg = await TToken.new('GGG', 'GGG', 18);
         hhh = await TToken.new('HHH', 'HHH', 18);
         zzz = await TToken.new('ZZZ', 'ZZZ', 18);
+        unboundToken = await TToken.new('UNBOUND_TOKEN', 'UNBOUND_TOKEN', 18);
 
         AAA = aaa.address;
         BBB = bbb.address;
@@ -48,6 +53,7 @@ contract('BPool', async (accounts) => {
         GGG = ggg.address;
         HHH = hhh.address;
         ZZZ = zzz.address;
+        UNBOUND_TOKEN = unboundToken.address;
 
         // Admin balances
         await aaa.mint(admin, toWei('100'));
@@ -59,6 +65,7 @@ contract('BPool', async (accounts) => {
         await ggg.mint(admin, toWei('100'));
         await hhh.mint(admin, toWei('100'));
         await zzz.mint(admin, toWei('100'));
+        await unboundToken.mint(admin, toWei('100'));
     });
 
     describe('Binding Tokens', () => {
@@ -72,6 +79,7 @@ contract('BPool', async (accounts) => {
             await ggg.approve(POOL, MAX);
             await hhh.approve(POOL, MAX);
             await zzz.approve(POOL, MAX);
+            await unboundToken.approve(POOL, MAX);
         });
 
         it('Admin binds tokens', async () => {
@@ -117,6 +125,28 @@ contract('BPool', async (accounts) => {
             await pool.gulp(GGG);
             const balance = await pool.getBalance(GGG);
             assert.equal(fromWei(balance), 50);
+        });
+
+        it('Fails when nonadmin calls seize', async () => {
+            await unboundToken.transferFrom(admin, POOL, toWei('10'));
+            await truffleAssert.reverts(pool.seize(UNBOUND_TOKEN, toWei('1'), { from: nonAdmin }));
+        });
+
+        it('Fails seize on bound token', async () => {
+            await hhh.transferFrom(admin, POOL, toWei('10'));
+            await truffleAssert.reverts(pool.seize(HHH, toWei('1')));
+        });
+
+        it('Pool can seize unbound tokens', async () => {
+            await unboundToken.transferFrom(admin, POOL, toWei('10'));
+
+            const poolBalance = Decimal(fromWei(await unboundToken.balanceOf(POOL)));
+            const adminBalance = Decimal(fromWei(await unboundToken.balanceOf(admin)));
+            await pool.seize(UNBOUND_TOKEN, toWei('1'));
+            const poolBalanceAfter = Decimal(fromWei(await unboundToken.balanceOf(POOL)));
+            const adminBalanceAfter = Decimal(fromWei(await unboundToken.balanceOf(admin)));
+            assert.equal(poolBalance - poolBalanceAfter, 1);
+            assert.equal(adminBalanceAfter - adminBalance, 1);
         });
 
         it('Fails swapExactAmountIn with limits', async () => {
