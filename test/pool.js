@@ -1,3 +1,4 @@
+const BN = require('bn.js');
 const truffleAssert = require('truffle-assertions');
 const {
     calcSpotPrice, calcOutGivenIn, calcInGivenOut, calcRelativeDiff, calcReserves,
@@ -463,6 +464,42 @@ contract('BPool', async (accounts) => {
             }
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
+        });
+
+        it('gulp', async () => {
+            const wethReserves0 = await pool.totalReserves(WETH);
+            const wethBalance0 = await pool.getBalance(WETH);
+            const erc20Balance0 = await weth.balanceOf(POOL);
+            assert.isTrue(erc20Balance0.sub(wethReserves0).eq(wethBalance0));
+
+            // No effect with `gulp` since no extra fund sent to the pool.
+            await pool.gulp(WETH);
+            const wethReserves1 = await pool.totalReserves(WETH);
+            const wethBalance1 = await pool.getBalance(WETH);
+            const erc20Balance1 = await weth.balanceOf(POOL);
+            // Nothing changed.
+            assert.isTrue(wethReserves1.eq(wethReserves0));
+            assert.isTrue(wethBalance1.eq(wethBalance0));
+            assert.isTrue(erc20Balance1.eq(erc20Balance0));
+
+            // Send 1 WETH to the pool
+            await weth.mint(POOL, toWei('1'), { from: admin });
+            const wethReserves2 = await pool.totalReserves(WETH);
+            const wethBalance2 = await pool.getBalance(WETH);
+            const erc20Balance2 = await weth.balanceOf(POOL);
+            const transferred = erc20Balance2.sub(wethReserves2).sub(wethBalance2);
+            // `erc20Balance1 = wethReserves1 + wethBalance1 + 1`
+            assert.isTrue(transferred.eq(new BN(toWei('1'))));
+
+            // `wethBalance2` is corrected again through `gulp`
+            await pool.gulp(WETH);
+            const wethReserves3 = await pool.totalReserves(WETH);
+            const wethBalance3 = await pool.getBalance(WETH);
+            const erc20Balance3 = await weth.balanceOf(POOL);
+            // New `wethBalance3 = wethBalance2 + 1` 
+            assert.isTrue(wethBalance3.eq(wethBalance2.add(transferred)));
+            // `wethBalance2 = erc20Balance2 - wethReserves2`
+            assert.isTrue(erc20Balance3.sub(wethReserves3).eq(wethBalance3));
         });
 
         it('Fails joins exits with limits', async () => {
