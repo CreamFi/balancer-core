@@ -179,7 +179,6 @@ contract('BPool', async (accounts) => {
         });
     });
 
-
     describe('Finalizing pool', () => {
         it('Fails when other users interact before finalizing', async () => {
             await truffleAssert.reverts(
@@ -496,7 +495,7 @@ contract('BPool', async (accounts) => {
             const wethReserves3 = await pool.totalReserves(WETH);
             const wethBalance3 = await pool.getBalance(WETH);
             const erc20Balance3 = await weth.balanceOf(POOL);
-            // New `wethBalance3 = wethBalance2 + 1` 
+            // New `wethBalance3 = wethBalance2 + 1`
             assert.isTrue(wethBalance3.eq(wethBalance2.add(transferred)));
             // `wethBalance2 = erc20Balance2 - wethReserves2`
             assert.isTrue(erc20Balance3.sub(wethReserves3).eq(wethBalance3));

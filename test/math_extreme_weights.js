@@ -13,7 +13,6 @@ const reservesRatio = 0.5;
 const exitFee = 0;
 const verbose = process.env.VERBOSE;
 
-
 contract('BPool', async (accounts) => {
     const admin = accounts[0];
     const { toWei } = web3.utils;
@@ -105,7 +104,6 @@ contract('BPool', async (accounts) => {
         await weth.approve(POOL, MAX);
         await dai.approve(POOL, MAX);
 
-
         await pool.bind(WETH, toWei(wethBalance), toWei(wethDenorm));
         await pool.bind(DAI, toWei(daiBalance), toWei(daiDenorm));
 
@@ -153,7 +151,6 @@ contract('BPool', async (accounts) => {
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
         });
-
 
         it('swapExactAmountOut', async () => {
             const tokenIn = WETH;
@@ -241,7 +238,6 @@ contract('BPool', async (accounts) => {
             await logAndAssertCurrentBalances();
         });
 
-
         it('joinswapExternAmountIn', async () => {
             // Call function
             const tokenRatio = 1.1;
@@ -259,7 +255,6 @@ contract('BPool', async (accounts) => {
             // Print current balances after operation
             await logAndAssertCurrentBalances();
         });
-
 
         it('joinswapPoolAmountOut', async () => {
             // Call function
@@ -369,7 +364,6 @@ contract('BPool', async (accounts) => {
             assert.isAtMost(relDif.toNumber(), errorDelta);
         });
 
-
         it('tokenAmountIn = joinswapPoolAmountOut(joinswapExternAmountIn(tokenAmountIn))', async () => {
             const tokenAmountIn = '1';
             const poolAmountOut = await pool.joinswapExternAmountIn.call(DAI, toWei(tokenAmountIn), toWei('0'));
@@ -390,7 +384,6 @@ contract('BPool', async (accounts) => {
             assert.isAtMost(relDif.toNumber(), errorDelta);
         });
 
-
         it('poolAmountIn = exitswapExternAmountOut(exitswapPoolAmountIn(poolAmountIn))', async () => {
             const poolAmountIn = 0.1;
             const tokenAmountOut = await pool.exitswapPoolAmountIn.call(WETH, toWei(String(poolAmountIn)), toWei('0'));
@@ -410,7 +403,6 @@ contract('BPool', async (accounts) => {
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
         });
-
 
         it('tokenAmountOut = exitswapPoolAmountIn(exitswapExternAmountOut(tokenAmountOut))', async () => {
             const tokenAmountOut = 1;
