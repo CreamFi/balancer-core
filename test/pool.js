@@ -487,7 +487,7 @@ contract('BPool', async (accounts) => {
             const wethBalance2 = await pool.getBalance(WETH);
             const erc20Balance2 = await weth.balanceOf(POOL);
             const transferred = erc20Balance2.sub(wethReserves2).sub(wethBalance2);
-            // `erc20Balance1 = wethReserves1 + wethBalance1 + 1`
+            // `erc20Balance2 = wethReserves2 + wethBalance2 + 1`
             assert.isTrue(transferred.eq(new BN(toWei('1'))));
 
             // `wethBalance2` is corrected again through `gulp`
@@ -497,7 +497,7 @@ contract('BPool', async (accounts) => {
             const erc20Balance3 = await weth.balanceOf(POOL);
             // New `wethBalance3 = wethBalance2 + 1`
             assert.isTrue(wethBalance3.eq(wethBalance2.add(transferred)));
-            // `wethBalance2 = erc20Balance2 - wethReserves2`
+            // `wethBalance3 = erc20Balance3 - wethReserves3`
             assert.isTrue(erc20Balance3.sub(wethReserves3).eq(wethBalance3));
         });
 
