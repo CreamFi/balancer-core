@@ -500,33 +500,22 @@ contract BPool is BBronze, BToken, BMath {
                                 );
         require(spotPriceBefore <= maxPrice);
 
-        tokenAmountOut = calcOutGivenIn(
-                            inRecord.balance,
-                            inRecord.denorm,
-                            outRecord.balance,
-                            outRecord.denorm,
-                            tokenAmountIn,
-                            _swapFee
-                        );
+        uint tokenInFee;
+        (tokenAmountOut, tokenInFee) = calcOutGivenIn(
+                                            inRecord.balance,
+                                            inRecord.denorm,
+                                            outRecord.balance,
+                                            outRecord.denorm,
+                                            tokenAmountIn,
+                                            _swapFee
+                                        );
         require(tokenAmountOut >= minAmountOut);
 
-        uint tokenAmountOutZeroFee = calcOutGivenIn(
-                            inRecord.balance,
-                            inRecord.denorm,
-                            outRecord.balance,
-                            outRecord.denorm,
-                            tokenAmountIn,
-                            0
-                        );
-        uint reserves = calcReserves(
-            tokenAmountOutZeroFee,
-            tokenAmountOut,
-            _reservesRatio
-        );
+        uint reserves = calcReservesFromFee(tokenInFee, _reservesRatio);
 
-        inRecord.balance = badd(inRecord.balance, tokenAmountIn);
         // Subtract `reserves`.
-        outRecord.balance = bsub(bsub(outRecord.balance, tokenAmountOut), reserves);
+        inRecord.balance = bsub(badd(inRecord.balance, tokenAmountIn), reserves);
+        outRecord.balance = bsub(outRecord.balance, tokenAmountOut);
 
         spotPriceAfter = calcSpotPrice(
                                 inRecord.balance,
@@ -541,7 +530,7 @@ contract BPool is BBronze, BToken, BMath {
 
         emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
 
-        totalReserves[address(tokenOut)] = badd(totalReserves[address(tokenOut)], reserves);
+        totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
 
         _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
         _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);
@@ -579,27 +568,19 @@ contract BPool is BBronze, BToken, BMath {
                                 );
         require(spotPriceBefore <= maxPrice);
 
-        tokenAmountIn = calcInGivenOut(
-                            inRecord.balance,
-                            inRecord.denorm,
-                            outRecord.balance,
-                            outRecord.denorm,
-                            tokenAmountOut,
-                            _swapFee
-                        );
+        uint tokenInFee;
+        (tokenAmountIn, tokenInFee) = calcInGivenOut(
+                                            inRecord.balance,
+                                            inRecord.denorm,
+                                            outRecord.balance,
+                                            outRecord.denorm,
+                                            tokenAmountOut,
+                                            _swapFee
+                                        );
         require(tokenAmountIn <= maxAmountIn);
 
-        uint tokenAmountInZeroFee = calcInGivenOut(
-                            inRecord.balance,
-                            inRecord.denorm,
-                            outRecord.balance,
-                            outRecord.denorm,
-                            tokenAmountOut,
-                            0
-                        );
-        uint reserves = calcReserves(
-            tokenAmountIn,
-            tokenAmountInZeroFee,
+        uint reserves = calcReservesFromFee(
+            tokenInFee,
             _reservesRatio
         );
 
