@@ -367,9 +367,10 @@ contract BPool is BBronze, BToken, BMath {
         _lock_
     {
         require(_records[token].bound);
-        uint newBalance = bsub(IERC20(token).balanceOf(address(this)), totalReserves[token]);
-        require(_records[token].balance <= newBalance);
-        _records[token].balance = newBalance;
+        uint erc20Balance = IERC20(token).balanceOf(address(this));
+        uint reserves = totalReserves[token];
+        require(badd(_records[token].balance, reserves) <= erc20Balance);
+        _records[token].balance = bsub(erc20Balance, reserves);
     }
 
     function seize(address token, uint amount)
