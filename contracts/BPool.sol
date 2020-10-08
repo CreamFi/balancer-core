@@ -367,7 +367,7 @@ contract BPool is BBronze, BToken, BMath {
         _lock_
     {
         require(_records[token].bound);
-        require(_records[token].balance <= bsub(IERC20(token).balanceOf(address(this)), totalReserves[token]));
+        require(_records[token].balance <= IERC20(token).balanceOf(address(this)));
         _records[token].balance = IERC20(token).balanceOf(address(this));
     }
 
