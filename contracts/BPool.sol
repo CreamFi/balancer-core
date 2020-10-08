@@ -369,7 +369,8 @@ contract BPool is BBronze, BToken, BMath {
         require(_records[token].bound);
         uint erc20Balance = IERC20(token).balanceOf(address(this));
         uint reserves = totalReserves[token];
-        require(badd(_records[token].balance, reserves) <= erc20Balance);
+        uint sumBalanceReserves = badd(_records[token].balance, reserves);
+        require(sumBalanceReserves <= erc20Balance);
         _records[token].balance = bsub(erc20Balance, reserves);
     }
 
