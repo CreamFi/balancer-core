@@ -1,4 +1,3 @@
-const BN = require('bn.js');
 const truffleAssert = require('truffle-assertions');
 const {
     calcSpotPrice, calcOutGivenIn, calcInGivenOut, calcRelativeDiff, calcReserves,
@@ -466,7 +465,7 @@ contract('BPool', async (accounts) => {
         });
 
         it('gulp', async () => {
-            const gulpAndCheck = async() => {
+            const gulpAndCheck = async () => {
                 // Check extra funds.
                 const balance = await pool.getBalance(WETH);
                 const erc20Balance = await weth.balanceOf(POOL);
