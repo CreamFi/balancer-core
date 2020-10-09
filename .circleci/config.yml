@@ -72,7 +72,7 @@ jobs:
           command: truffle compile
       - run:
           name: Slither
-          command: slither . --filter-paths test --exclude=naming-convention,unused-state,solc-version,constable-states,external-function,reentrancy-events
+          command: slither . --filter-paths test --exclude=naming-convention,unused-state,solc-version,constable-states,external-function,reentrancy-events,incorrect-equality
 
 workflows:
   version: 2
