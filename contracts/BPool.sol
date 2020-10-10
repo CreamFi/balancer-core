@@ -367,7 +367,12 @@ contract BPool is BBronze, BToken, BMath {
         _lock_
     {
         require(_records[token].bound);
-        _records[token].balance = IERC20(token).balanceOf(address(this));
+        uint erc20Balance = IERC20(token).balanceOf(address(this));
+        uint reserves = totalReserves[token];
+        // `_records[token].balance` should be equaled to `bsub(erc20Balance, reserves)` unless there are extra
+        // tokens transferred to this pool without calling `joinxxx`.
+        require(_records[token].balance <= bsub(erc20Balance, reserves));
+        _records[token].balance = bsub(erc20Balance, reserves);
     }
 
     function seize(address token, uint amount)

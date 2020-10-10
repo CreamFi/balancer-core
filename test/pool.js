@@ -178,7 +178,6 @@ contract('BPool', async (accounts) => {
         });
     });
 
-
     describe('Finalizing pool', () => {
         it('Fails when other users interact before finalizing', async () => {
             await truffleAssert.reverts(
@@ -465,6 +464,57 @@ contract('BPool', async (accounts) => {
             assert.isAtMost(relDif.toNumber(), errorDelta);
         });
 
+        it('gulp', async () => {
+            const gulpAndCheck = async () => {
+                // Check extra funds.
+                const balance = await pool.getBalance(WETH);
+                const erc20Balance = await weth.balanceOf(POOL);
+                const reserves = await pool.totalReserves(WETH);
+                const extra = erc20Balance.sub(balance).sub(reserves);
+
+                await pool.gulp(WETH);
+
+                // Ensure balance is correct again after `gulp` is called.
+                const balanceAfter = await pool.getBalance(WETH);
+                const erc20BalanceAfter = await weth.balanceOf(POOL);
+                const reservesAfter = await pool.totalReserves(WETH);
+                // Check the equation: `erc20Balance = balance + reserves`
+                assert.isTrue(erc20BalanceAfter.sub(reservesAfter).eq(balanceAfter));
+                // `erc20Balance` stays the same
+                assert.isTrue(erc20BalanceAfter.eq(erc20Balance));
+                // `reserves` stays the same
+                assert.isTrue(reservesAfter.eq(reserves));
+                // Only `balance` is changed after calling `gulp`.
+                assert.isTrue(balance.add(extra).eq(balanceAfter));
+            };
+
+            // No effect with `gulp` since no extra fund sent to the pool.
+            await gulpAndCheck();
+
+            // Test: Unexpected funds sent to the pool.
+            await weth.mint(POOL, toWei('1'), { from: admin });
+            await gulpAndCheck();
+
+            // Test: Call several functions that increase `reserves` and check the balance after `gulp`.
+            await pool.swapExactAmountIn(
+                WETH,
+                toWei('0.1'),
+                DAI,
+                toWei('0'),
+                toWei('10000000'),
+                { from: user2 },
+            );
+            await pool.swapExactAmountOut(
+                WETH,
+                toWei('1000'),
+                MKR,
+                toWei('0.0001'),
+                toWei('100000'),
+                { from: user2 },
+            );
+            await gulpAndCheck();
+        });
+
         it('Fails joins exits with limits', async () => {
             await truffleAssert.reverts(
                 pool.joinPool(toWei('10'), [toWei('1'), toWei('1'), toWei('1')]),
@@ -541,6 +591,39 @@ contract('BPool', async (accounts) => {
                 pool.getSpotPriceSansFee(XXX, DAI),
             );
         });
+
+        /* drainTokenReserves */
+
+        // NOTE: call `factory.collectTokenReserves` instead of `pool.drainTokenReserves` directly
+        // for testing, since only the factory can call `drainTokenReserves`.
+        it('Reserves should go to reservesAddress after factory.collectTokenReserves', async () => {
+            await factory.setReservesAddress(reservesAddress);
+
+            const reservesDAI = fromWei(await pool.totalReserves.call(DAI));
+            const reservesWETH = fromWei(await pool.totalReserves.call(WETH));
+            const reservesAddressBalanceDAI = fromWei(await dai.balanceOf.call(reservesAddress));
+            const reservesAddressBalanceWETH = fromWei(await weth.balanceOf.call(reservesAddress));
+
+            await factory.collectTokenReserves(POOL);
+
+            const reservesDAIAfter = fromWei(await pool.totalReserves.call(DAI));
+            const reservesWETHAfter = fromWei(await pool.totalReserves.call(WETH));
+            const reservesAddressBalanceDAIAfter = fromWei(
+                await dai.balanceOf.call(reservesAddress),
+            );
+            const reservesAddressBalanceWETHAfter = fromWei(
+                await weth.balanceOf.call(reservesAddress),
+            );
+            // All balance in totalReserves should be drained.
+            assert.equal(reservesDAIAfter, 0);
+            assert.equal(reservesWETHAfter, 0);
+            // Drained reserves should go to admin.
+            assert.equal(reservesAddressBalanceDAIAfter - reservesAddressBalanceDAI, reservesDAI);
+            assert.equal(
+                reservesAddressBalanceWETHAfter - reservesAddressBalanceWETH,
+                reservesWETH,
+            );
+        });
     });
 
     describe('BToken interactions', () => {
@@ -581,39 +664,6 @@ contract('BPool', async (accounts) => {
             await pool.transferFrom(admin, user2, toWei('1'));
             await pool.approve(user2, toWei('10'));
             await pool.transferFrom(admin, user2, toWei('1'), { from: user2 });
-        });
-    });
-
-    describe('drainTokenReserves', () => {
-        // NOTE: call `factory.collectTokenReserves` instead of `pool.drainTokenReserves` directly
-        // for testing, since only the factory can call `drainTokenReserves`.
-        it('Reserves should go to reservesAddress after factory.collectTokenReserves', async () => {
-            await factory.setReservesAddress(reservesAddress);
-
-            const reservesDAI = fromWei(await pool.totalReserves.call(DAI));
-            const reservesWETH = fromWei(await pool.totalReserves.call(WETH));
-            const reservesAddressBalanceDAI = fromWei(await dai.balanceOf.call(reservesAddress));
-            const reservesAddressBalanceWETH = fromWei(await weth.balanceOf.call(reservesAddress));
-
-            await factory.collectTokenReserves(POOL);
-
-            const reservesDAIAfter = fromWei(await pool.totalReserves.call(DAI));
-            const reservesWETHAfter = fromWei(await pool.totalReserves.call(WETH));
-            const reservesAddressBalanceDAIAfter = fromWei(
-                await dai.balanceOf.call(reservesAddress),
-            );
-            const reservesAddressBalanceWETHAfter = fromWei(
-                await weth.balanceOf.call(reservesAddress),
-            );
-            // All balance in totalReserves should be drained.
-            assert.equal(reservesDAIAfter, 0);
-            assert.equal(reservesWETHAfter, 0);
-            // Drained reserves should go to admin.
-            assert.equal(reservesAddressBalanceDAIAfter - reservesAddressBalanceDAI, reservesDAI);
-            assert.equal(
-                reservesAddressBalanceWETHAfter - reservesAddressBalanceWETH,
-                reservesWETH,
-            );
         });
     });
 });

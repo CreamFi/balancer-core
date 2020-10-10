@@ -186,7 +186,6 @@ contract('BPool', async (accounts) => {
             assert.isAtMost(relDif.toNumber(), errorDelta);
         });
 
-
         it('swapExactAmountOut', async () => {
             const tokenIn = DAI;
             const maxAmountIn = MAX;
@@ -301,7 +300,6 @@ contract('BPool', async (accounts) => {
             await logAndAssertCurrentBalances();
         });
 
-
         it('joinswapExternAmountIn', async () => {
             // Call function
             const poolRatio = 1.1;
@@ -336,7 +334,6 @@ contract('BPool', async (accounts) => {
             // Print current balances after operation
             await logAndAssertCurrentBalances();
         });
-
 
         it('joinswapPoolAmountOut', async () => {
             // Call function
@@ -381,7 +378,6 @@ contract('BPool', async (accounts) => {
             // Print current balances after operation
             await logAndAssertCurrentBalances();
         });
-
 
         it('exitswapPoolAmountIn', async () => {
             // Call function
@@ -431,7 +427,6 @@ contract('BPool', async (accounts) => {
             await logAndAssertCurrentBalances();
         });
 
-
         it('exitswapExternAmountOut', async () => {
             // Call function
             const poolRatioAfterExitFee = 0.9;
@@ -469,7 +464,6 @@ contract('BPool', async (accounts) => {
             await logAndAssertCurrentBalances();
         });
 
-
         it('pAo = joinswapExternAmountIn(joinswapPoolAmountOut(pAo))', async () => {
             const pAo = 10;
             const tAi = await pool.joinswapPoolAmountOut.call(WETH, toWei(String(pAo)), MAX);
@@ -489,7 +483,6 @@ contract('BPool', async (accounts) => {
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
         });
-
 
         it('tAi = joinswapPoolAmountOut(joinswapExternAmountIn(tAi))', async () => {
             const tAi = 1;
@@ -511,7 +504,6 @@ contract('BPool', async (accounts) => {
             assert.isAtMost(relDif.toNumber(), errorDelta);
         });
 
-
         it('pAi = exitswapExternAmountOut(exitswapPoolAmountIn(pAi))', async () => {
             const pAi = 10;
             const tAo = await pool.exitswapPoolAmountIn.call(WETH, toWei(String(pAi)), toWei('0'));
@@ -531,7 +523,6 @@ contract('BPool', async (accounts) => {
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
         });
-
 
         it('tAo = exitswapPoolAmountIn(exitswapExternAmountOut(tAo))', async () => {
             const tAo = '1';
