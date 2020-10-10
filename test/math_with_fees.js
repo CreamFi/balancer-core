@@ -135,7 +135,7 @@ contract('BPool', async (accounts) => {
             );
 
             // Checking outputs
-            const amountOut = calcOutGivenIn(
+            const [amountOut, amountInFee] = calcOutGivenIn(
                 currentWethBalance,
                 wethNorm,
                 currentDaiBalance,
@@ -143,15 +143,7 @@ contract('BPool', async (accounts) => {
                 tokenAmountIn,
                 swapFee,
             );
-            const amountOutZeroFee = calcOutGivenIn(
-                currentWethBalance,
-                wethNorm,
-                currentDaiBalance,
-                daiNorm,
-                tokenAmountIn,
-                0,
-            );
-            const reserves = (amountOutZeroFee - amountOut) / 2;
+            const reserves = amountInFee / 2;
 
             let expected = amountOut;
             let actual = Decimal(fromWei(output[0]));
@@ -167,9 +159,9 @@ contract('BPool', async (accounts) => {
             assert.isAtMost(relDif.toNumber(), errorDelta);
 
             expected = calcSpotPrice(
-                currentWethBalance.plus(Decimal(2)),
+                currentWethBalance.plus(Decimal(2)).sub(Decimal(reserves)),
                 wethNorm,
-                currentDaiBalance.sub(actual).sub(Decimal(reserves)), // Subtract the reserves
+                currentDaiBalance.sub(actual),
                 daiNorm,
                 swapFee,
             );
@@ -202,7 +194,7 @@ contract('BPool', async (accounts) => {
             );
 
             // Checking outputs
-            const amountIn = calcInGivenOut(
+            const [amountIn, amountInFee] = calcInGivenOut(
                 currentDaiBalance,
                 daiNorm,
                 currentWethBalance,
@@ -210,15 +202,7 @@ contract('BPool', async (accounts) => {
                 tokenAmountOut,
                 swapFee,
             );
-            const amountInZeroFee = calcInGivenOut(
-                currentDaiBalance,
-                daiNorm,
-                currentWethBalance,
-                wethNorm,
-                tokenAmountOut,
-                0,
-            );
-            const reserves = (amountIn - amountInZeroFee) / 2;
+            const reserves = amountInFee / 2;
 
             let expected = amountIn;
             let actual = fromWei(output[0]);

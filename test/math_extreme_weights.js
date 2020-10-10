@@ -138,7 +138,7 @@ contract('BPool', async (accounts) => {
             }
 
             assert.isAtMost(relDif.toNumber(), errorDelta);
-            expected = Decimal('74.1846535049645437');
+            expected = Decimal('74.17203706816618');
             actual = Decimal(fromWei(output.spotPriceAfter));
             relDif = calcRelativeDiff(expected, actual);
 
