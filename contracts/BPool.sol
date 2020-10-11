@@ -51,6 +51,11 @@ contract BPool is BBronze, BToken, BMath {
         uint256         tokenAmountOut
     );
 
+    event LOG_ADD_RESERVES(
+        address indexed token,
+        uint256         reservesAmount
+    );
+
     event LOG_CALL(
         bytes4  indexed sig,
         address indexed caller,
@@ -531,6 +536,7 @@ contract BPool is BBronze, BToken, BMath {
         emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
 
         totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
+        emit LOG_ADD_RESERVES(address(tokenIn), reserves);
 
         _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
         _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);
@@ -602,6 +608,7 @@ contract BPool is BBronze, BToken, BMath {
         emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
 
         totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
+        emit LOG_ADD_RESERVES(address(tokenIn), reserves);
 
         _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
         _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);
@@ -641,6 +648,7 @@ contract BPool is BBronze, BToken, BMath {
         emit LOG_JOIN(msg.sender, tokenIn, tokenAmountIn);
 
         totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
+        emit LOG_ADD_RESERVES(address(tokenIn), reserves);
 
         _mintPoolShare(poolAmountOut);
         _pushPoolShare(msg.sender, poolAmountOut);
@@ -693,6 +701,7 @@ contract BPool is BBronze, BToken, BMath {
         emit LOG_JOIN(msg.sender, tokenIn, tokenAmountIn);
 
         totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
+        emit LOG_ADD_RESERVES(address(tokenIn), reserves);
 
         _mintPoolShare(poolAmountOut);
         _pushPoolShare(msg.sender, poolAmountOut);
@@ -746,6 +755,7 @@ contract BPool is BBronze, BToken, BMath {
         emit LOG_EXIT(msg.sender, tokenOut, tokenAmountOut);
 
         totalReserves[address(tokenOut)] = badd(totalReserves[address(tokenOut)], reserves);
+        emit LOG_ADD_RESERVES(address(tokenOut), reserves);
 
         _pullPoolShare(msg.sender, poolAmountIn);
         _burnPoolShare(bsub(poolAmountIn, exitFee));
@@ -788,6 +798,7 @@ contract BPool is BBronze, BToken, BMath {
         emit LOG_EXIT(msg.sender, tokenOut, tokenAmountOut);
 
         totalReserves[address(tokenOut)] = badd(totalReserves[address(tokenOut)], reserves);
+        emit LOG_ADD_RESERVES(address(tokenOut), reserves);
 
         _pullPoolShare(msg.sender, poolAmountIn);
         _burnPoolShare(bsub(poolAmountIn, exitFee));
