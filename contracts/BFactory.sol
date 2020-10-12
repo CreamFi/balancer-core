@@ -117,9 +117,10 @@ contract BFactory is BBronze {
     }
 
     function collect(BPool pool)
-        external 
+        external
     {
         require(msg.sender == _blabs);
+        require(_isBPool[address(pool)]);
         uint collected = IERC20(pool).balanceOf(address(this));
         bool xfer = pool.transfer(_blabs, collected);
         require(xfer);

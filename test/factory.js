@@ -69,6 +69,13 @@ contract('BFactory', async (accounts) => {
             await truffleAssert.reverts(factory.collect(nonAdmin, { from: nonAdmin }));
         });
 
+        it('admin fails to collect non pool', async () => {
+            const nonPool = accounts[4];
+            await truffleAssert.reverts(
+                factory.collect(nonPool),
+            );
+        });
+
         it('admin collects fees', async () => {
             await pool.bind(WETH, toWei('5'), toWei('5'));
             await pool.bind(DAI, toWei('200'), toWei('5'));
