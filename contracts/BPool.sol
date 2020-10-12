@@ -30,19 +30,22 @@ contract BPool is BBronze, BToken, BMath {
         address indexed tokenIn,
         address indexed tokenOut,
         uint256         tokenAmountIn,
-        uint256         tokenAmountOut
-    );
+        uint256         tokenAmountOut,
+        uint256         reservesAmount
+);
 
     event LOG_JOIN(
         address indexed caller,
         address indexed tokenIn,
-        uint256         tokenAmountIn
-    );
+        uint256         tokenAmountIn,
+        uint256         reservesAmount
+);
 
     event LOG_EXIT(
         address indexed caller,
         address indexed tokenOut,
-        uint256         tokenAmountOut
+        uint256         tokenAmountOut,
+        uint256         reservesAmount
     );
 
     event LOG_DRAIN_RESERVES(
@@ -436,7 +439,7 @@ contract BPool is BBronze, BToken, BMath {
             require(tokenAmountIn != 0);
             require(tokenAmountIn <= maxAmountsIn[i]);
             _records[t].balance = badd(_records[t].balance, tokenAmountIn);
-            emit LOG_JOIN(msg.sender, t, tokenAmountIn);
+            emit LOG_JOIN(msg.sender, t, tokenAmountIn, 0);
             _pullUnderlying(t, msg.sender, tokenAmountIn);
         }
         _mintPoolShare(poolAmountOut);
@@ -467,7 +470,7 @@ contract BPool is BBronze, BToken, BMath {
             require(tokenAmountOut != 0);
             require(tokenAmountOut >= minAmountsOut[i]);
             _records[t].balance = bsub(_records[t].balance, tokenAmountOut);
-            emit LOG_EXIT(msg.sender, t, tokenAmountOut);
+            emit LOG_EXIT(msg.sender, t, tokenAmountOut, 0);
             _pushUnderlying(t, msg.sender, tokenAmountOut);
         }
 
@@ -533,7 +536,7 @@ contract BPool is BBronze, BToken, BMath {
         require(spotPriceAfter <= maxPrice);
         require(spotPriceBefore <= bdiv(tokenAmountIn, tokenAmountOut));
 
-        emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
+        emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut, reserves);
 
         totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
         emit LOG_ADD_RESERVES(address(tokenIn), reserves);
@@ -605,7 +608,7 @@ contract BPool is BBronze, BToken, BMath {
         require(spotPriceAfter <= maxPrice);
         require(spotPriceBefore <= bdiv(tokenAmountIn, tokenAmountOut));
 
-        emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
+        emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut, reserves);
 
         totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
         emit LOG_ADD_RESERVES(address(tokenIn), reserves);
@@ -645,7 +648,7 @@ contract BPool is BBronze, BToken, BMath {
 
         inRecord.balance = bsub(badd(inRecord.balance, tokenAmountIn), reserves);
 
-        emit LOG_JOIN(msg.sender, tokenIn, tokenAmountIn);
+        emit LOG_JOIN(msg.sender, tokenIn, tokenAmountIn, reserves);
 
         totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
         emit LOG_ADD_RESERVES(address(tokenIn), reserves);
@@ -698,7 +701,7 @@ contract BPool is BBronze, BToken, BMath {
 
         inRecord.balance = bsub(badd(inRecord.balance, tokenAmountIn), reserves);
 
-        emit LOG_JOIN(msg.sender, tokenIn, tokenAmountIn);
+        emit LOG_JOIN(msg.sender, tokenIn, tokenAmountIn, reserves);
 
         totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
         emit LOG_ADD_RESERVES(address(tokenIn), reserves);
@@ -752,7 +755,7 @@ contract BPool is BBronze, BToken, BMath {
 
         uint exitFee = bmul(poolAmountIn, EXIT_FEE);
 
-        emit LOG_EXIT(msg.sender, tokenOut, tokenAmountOut);
+        emit LOG_EXIT(msg.sender, tokenOut, tokenAmountOut, reserves);
 
         totalReserves[address(tokenOut)] = badd(totalReserves[address(tokenOut)], reserves);
         emit LOG_ADD_RESERVES(address(tokenOut), reserves);
@@ -795,7 +798,7 @@ contract BPool is BBronze, BToken, BMath {
 
         uint exitFee = bmul(poolAmountIn, EXIT_FEE);
 
-        emit LOG_EXIT(msg.sender, tokenOut, tokenAmountOut);
+        emit LOG_EXIT(msg.sender, tokenOut, tokenAmountOut, reserves);
 
         totalReserves[address(tokenOut)] = badd(totalReserves[address(tokenOut)], reserves);
         emit LOG_ADD_RESERVES(address(tokenOut), reserves);
