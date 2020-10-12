@@ -61,7 +61,7 @@ contract BMath is BBronze, BConst, BNum {
         uint swapFee
     )
         public pure
-        returns (uint tokenAmountOut)
+        returns (uint tokenAmountOut, uint tokenInFee)
     {
         uint weightRatio = bdiv(tokenWeightIn, tokenWeightOut);
         uint adjustedIn = bsub(BONE, swapFee);
@@ -70,7 +70,8 @@ contract BMath is BBronze, BConst, BNum {
         uint foo = bpow(y, weightRatio);
         uint bar = bsub(BONE, foo);
         tokenAmountOut = bmul(tokenBalanceOut, bar);
-        return tokenAmountOut;
+        tokenInFee = bsub(tokenAmountIn, adjustedIn);
+        return (tokenAmountOut, tokenInFee);
     }
 
     /**********************************************************************************************
@@ -92,16 +93,19 @@ contract BMath is BBronze, BConst, BNum {
         uint swapFee
     )
         public pure
-        returns (uint tokenAmountIn)
+        returns (uint tokenAmountIn, uint tokenInFee)
     {
         uint weightRatio = bdiv(tokenWeightOut, tokenWeightIn);
         uint diff = bsub(tokenBalanceOut, tokenAmountOut);
         uint y = bdiv(tokenBalanceOut, diff);
         uint foo = bpow(y, weightRatio);
         foo = bsub(foo, BONE);
+        foo = bmul(tokenBalanceIn, foo);
         tokenAmountIn = bsub(BONE, swapFee);
-        tokenAmountIn = bdiv(bmul(tokenBalanceIn, foo), tokenAmountIn);
-        return tokenAmountIn;
+        tokenAmountIn = bdiv(foo, tokenAmountIn);
+        tokenInFee = bdiv(foo, BONE);
+        tokenInFee = bsub(tokenAmountIn, tokenInFee);
+        return (tokenAmountIn, tokenInFee);
     }
 
     /**********************************************************************************************
@@ -285,4 +289,11 @@ contract BMath is BBronze, BConst, BNum {
         require(swapFeeAndReserves >= reserves);
     }
 
+    function calcReservesFromFee(uint fee, uint reservesRatio)
+        internal pure
+        returns (uint reserves)
+    {
+        require(reservesRatio <= BONE);
+        reserves = bmul(fee, reservesRatio);
+    }
 }

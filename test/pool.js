@@ -1,6 +1,6 @@
 const truffleAssert = require('truffle-assertions');
 const {
-    calcSpotPrice, calcOutGivenIn, calcInGivenOut, calcRelativeDiff, calcReserves,
+    calcSpotPrice, calcOutGivenIn, calcInGivenOut, calcRelativeDiff, calcReservesFromFee,
 } = require('../lib/calc_comparisons');
 
 const BPool = artifacts.require('BPool');
@@ -375,8 +375,7 @@ contract('BPool', async (accounts) => {
 
         it('swapExactAmountIn', async () => {
             // 2.5 WETH -> DAI
-            const expected = calcOutGivenIn(52.5, 5, 10500, 5, 2.5, 0.003);
-            const expectedZeroFee = calcOutGivenIn(52.5, 5, 10500, 5, 2.5, 0);
+            const [expected, amountInFee] = calcOutGivenIn(52.5, 5, 10500, 5, 2.5, 0.003);
             const txr = await pool.swapExactAmountIn(
                 WETH,
                 toWei('2.5'),
@@ -403,9 +402,9 @@ contract('BPool', async (accounts) => {
             // Test: `totalReserves` is updated correctly.
             const reservesDai = await pool.totalReserves.call(DAI);
             const reservesWETH = await pool.totalReserves.call(WETH);
-            const expectedReservesDai = calcReserves(expectedZeroFee, expected, reservesRatio);
-            assert.approximately(Number(fromWei(reservesDai)), Number(expectedReservesDai), errorDelta);
-            assert.equal(fromWei(reservesWETH), 0);
+            const expectedReservesWETH = calcReservesFromFee(amountInFee, reservesRatio);
+            assert.approximately(Number(fromWei(reservesWETH)), Number(expectedReservesWETH), errorDelta);
+            assert.equal(fromWei(reservesDai), 0);
 
             const userDaiBalance = await dai.balanceOf(user2);
             assert.equal(fromWei(userDaiBalance), Number(fromWei(log.args[4])));
@@ -429,10 +428,13 @@ contract('BPool', async (accounts) => {
         });
 
         it('swapExactAmountOut', async () => {
+            // collect reserves collected from previous test cases
+            await factory.setReservesAddress('0x0000000000000000000000000000000000000000');
+            await factory.collectTokenReserves(POOL);
+
             // ETH -> 1 MKR
-            // const amountIn = (55 * (((21 / (21 - 1)) ** (5 / 5)) - 1)) / (1 - 0.003);
-            const expected = calcInGivenOut(55, 5, 21, 5, 1, 0.003);
-            const expectedZeroFee = calcInGivenOut(55, 5, 21, 5, 1, 0);
+            // const amountIn = (54.9985 * (((21 / (21 - 1)) ** (5 / 5)) - 1)) / (1 - 0.003);
+            const [expected, amountInFee] = calcInGivenOut(54.9985, 5, 21, 5, 1, 0.003);
             const txr = await pool.swapExactAmountOut(
                 WETH,
                 toWei('3'),
@@ -448,7 +450,7 @@ contract('BPool', async (accounts) => {
             // Test: `totalReserves` is updated correctly.
             const reservesWETH = await pool.totalReserves.call(WETH);
             const reservesMKR = await pool.totalReserves.call(MKR);
-            const expectedReservesWETH = calcReserves(expected, expectedZeroFee, reservesRatio);
+            const expectedReservesWETH = calcReservesFromFee(amountInFee, reservesRatio);
             assert.approximately(Number(fromWei(reservesWETH)), Number(expectedReservesWETH), errorDelta);
             assert.equal(fromWei(reservesMKR), 0);
 
