@@ -18,7 +18,7 @@ import "./BConst.sol";
 contract BNum is BConst {
 
     function btoi(uint a)
-        internal pure 
+        internal pure
         returns (uint)
     {
         return a / BONE;
@@ -36,7 +36,7 @@ contract BNum is BConst {
         returns (uint)
     {
         uint c = a + b;
-        require(c >= a);
+        require(c >= a, "ERR_ADD_OVERFLOW");
         return c;
     }
 
@@ -45,7 +45,7 @@ contract BNum is BConst {
         returns (uint)
     {
         (uint c, bool flag) = bsubSign(a, b);
-        require(!flag);
+        require(!flag, "ERR_SUB_UNDERFLOW");
         return c;
     }
 
@@ -65,9 +65,9 @@ contract BNum is BConst {
         returns (uint)
     {
         uint c0 = a * b;
-        require(a == 0 || c0 / a == b);
+        require(a == 0 || c0 / a == b, "ERR_MUL_OVERFLOW");
         uint c1 = c0 + (BONE / 2);
-        require(c1 >= c0);
+        require(c1 >= c0, "ERR_MUL_OVERFLOW");
         uint c2 = c1 / BONE;
         return c2;
     }
@@ -76,11 +76,11 @@ contract BNum is BConst {
         internal pure
         returns (uint)
     {
-        require(b != 0);
+        require(b != 0, "ERR_DIV_ZERO");
         uint c0 = a * BONE;
-        require(a == 0 || c0 / a == BONE); // bmul overflow
+        require(a == 0 || c0 / a == BONE, "ERR_DIV_INTERNAL"); // bmul overflow
         uint c1 = c0 + (b / 2);
-        require(c1 >= c0); //  badd require
+        require(c1 >= c0, "ERR_DIV_INTERNAL"); //  badd require
         uint c2 = c1 / b;
         return c2;
     }
@@ -109,10 +109,10 @@ contract BNum is BConst {
         internal pure
         returns (uint)
     {
-        require(base >= MIN_BPOW_BASE);
-        require(base <= MAX_BPOW_BASE);
+        require(base >= MIN_BPOW_BASE, "ERR_BPOW_BASE_TOO_LOW");
+        require(base <= MAX_BPOW_BASE, "ERR_BPOW_BASE_TOO_HIGH");
 
-        uint whole  = bfloor(exp);   
+        uint whole  = bfloor(exp);
         uint remain = bsub(exp, whole);
 
         uint wholePow = bpowi(base, btoi(whole));
@@ -137,7 +137,7 @@ contract BNum is BConst {
         bool negative = false;
 
 
-        // term(k) = numer / denom 
+        // term(k) = numer / denom
         //         = (product(a - i - 1, i=1-->k) * x^k) / (k!)
         // each iteration, multiply previous term by (a-(k-1)) * x / k
         // continue until term is less than precision
@@ -159,5 +159,4 @@ contract BNum is BConst {
 
         return sum;
     }
-
 }
