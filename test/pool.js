@@ -406,6 +406,12 @@ contract('BPool', async (accounts) => {
             assert.approximately(Number(fromWei(reservesWETH)), Number(expectedReservesWETH), errorDelta);
             assert.equal(fromWei(reservesDai), 0);
 
+            truffleAssert.eventEmitted(
+                txr,
+                'LOG_ADD_RESERVES',
+                (event) => event.token === WETH && event.reservesAmount.eq(reservesWETH),
+            );
+
             const userDaiBalance = await dai.balanceOf(user2);
             assert.equal(fromWei(userDaiBalance), Number(fromWei(log.args[4])));
 
@@ -453,6 +459,12 @@ contract('BPool', async (accounts) => {
             const expectedReservesWETH = calcReservesFromFee(amountInFee, reservesRatio);
             assert.approximately(Number(fromWei(reservesWETH)), Number(expectedReservesWETH), errorDelta);
             assert.equal(fromWei(reservesMKR), 0);
+
+            truffleAssert.eventEmitted(
+                txr,
+                'LOG_ADD_RESERVES',
+                (event) => event.token === WETH && event.reservesAmount.eq(reservesWETH),
+            );
 
             const actual = fromWei(log.args[3]);
             const relDif = calcRelativeDiff(expected, actual);
