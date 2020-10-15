@@ -32,14 +32,14 @@ contract BPool is BBronze, BToken, BMath {
         uint256         tokenAmountIn,
         uint256         tokenAmountOut,
         uint256         reservesAmount
-);
+    );
 
     event LOG_JOIN(
         address indexed caller,
         address indexed tokenIn,
         uint256         tokenAmountIn,
         uint256         reservesAmount
-);
+    );
 
     event LOG_EXIT(
         address indexed caller,
@@ -237,6 +237,7 @@ contract BPool is BBronze, BToken, BMath {
         require(!_finalized);
         require(msg.sender == _controller);
         require(reservesRatio <= BONE);
+        require(reservesRatio >= DEFAULT_RESERVES_RATIO);
         _reservesRatio = reservesRatio;
     }
 

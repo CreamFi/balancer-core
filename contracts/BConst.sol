@@ -21,8 +21,8 @@ contract BConst is BBronze {
     uint public constant MIN_BOUND_TOKENS  = 2;
     uint public constant MAX_BOUND_TOKENS  = 8;
 
-    uint public constant MIN_FEE           = BONE / 10**6;
-    uint public constant MAX_FEE           = BONE / 10;
+    uint public constant MIN_FEE           = BONE / 40000; // MIN_FEE = 0.0025%
+    uint public constant MAX_FEE           = BONE / 10; // MAX_FEE = 10%
     uint public constant EXIT_FEE          = 0;
     uint public constant DEFAULT_RESERVES_RATIO = BONE / 5;
 
