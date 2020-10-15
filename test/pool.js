@@ -273,6 +273,12 @@ contract('BPool', async (accounts) => {
             assert.equal(reservesRatio, fromWei(actualReservesRatio));
         });
 
+        it('Fails to set reserves ratio below default value', async () => {
+            await truffleAssert.reverts(
+                pool.setReservesRatio(toWei('0.19')),
+            );
+        });
+
         it('Fails nonadmin finalizes pool', async () => {
             await truffleAssert.reverts(
                 pool.finalize({ from: user1 }),
@@ -297,7 +303,7 @@ contract('BPool', async (accounts) => {
         it('Cant setPublicSwap, setSwapFee, setReservesRatio when finalized', async () => {
             await truffleAssert.reverts(pool.setPublicSwap(false));
             await truffleAssert.reverts(pool.setSwapFee(toWei('0.01')));
-            await truffleAssert.reverts(pool.setReservesRatio(toWei('0.01')));
+            await truffleAssert.reverts(pool.setReservesRatio(toWei('0.2')));
         });
 
         it('Fails binding new token after finalized', async () => {
